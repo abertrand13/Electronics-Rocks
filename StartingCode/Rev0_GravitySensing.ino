@@ -313,9 +313,9 @@ void loop() {
     draw(255-valueZ, 255, valueZ); //fade red to blue
     /*
     int valueZ = 128 + gravity.z * 127; //0-255
-    int valueXY = 128 + 127*((int) sqrt(pow(gravity.x,2) + pow(gravity.y,2))); 
-    draw(255-valueZ, 255 - valueXY, valueZ); //fade red to blue*/
-    //just an experiment, not working yet
+    int valueXY = ((int) sqrt(pow(255*gravity.x,2) + pow(255*gravity.y,2))); //0-255
+    draw(255-valueZ, 255 - valueXY, valueZ); //fade red to green to blue*/
+    //just an experiment, may or may not work now?
 #endif
 
     // blink LED to indicate activity
