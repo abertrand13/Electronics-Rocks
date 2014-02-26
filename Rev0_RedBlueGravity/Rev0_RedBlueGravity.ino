@@ -1,3 +1,14 @@
+// Copyleft
+// Open source
+// Everything else that indicates that you should totally download this.
+//
+// Gravity Sensing :: Rev0
+// Basic code which uses the IC2dev library and MPU6050 accelerometer/gyro to set the color of an LED
+// based on whether the accelerometer is facing up or down.
+// Current setting is red for up, blue for down, and faded in between.
+//
+// Initial contributions: Joey Asperger, Andrew Nguyen, Tucker Leavitt, Alex Bertrand
+
 // I2C device class (I2Cdev) demonstration Arduino sketch for MPU6050 class using DMP (MotionApps v2.0)
 // 6/21/2012 by Jeff Rowberg <jeff@rowberg.net>
 // Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
@@ -81,18 +92,7 @@ MPU6050 mpu;
  http://code.google.com/p/arduino/issues/detail?id=958
  * ========================================================================= */
 
-
-
-// uncomment "OUTPUT_READABLE_QUATERNION" if you want to see the actual
-// quaternion components in a [w, x, y, z] format (not best for parsing
-// on a remote host such as Processing or something though)
-//#define OUTPUT_READABLE_QUATERNION
-
-// uncomment "OUTPUT_READABLE_EULER" if you want to see Euler angles
-// (in degrees) calculated from the quaternions coming from the FIFO.
-// Note that Euler angles suffer from gimbal lock (for more info, see
-// http://en.wikipedia.org/wiki/Gimbal_lock)
-//#define OUTPUT_READABLE_EULER
+//There were other options here...we took them out.
 
 // uncomment "OUTPUT_READABLE_YAWPITCHROLL" if you want to see the yaw/
 // pitch/roll angles (in degrees) calculated from the quaternions coming
@@ -100,23 +100,6 @@ MPU6050 mpu;
 // Also note that yaw/pitch/roll angles suffer from gimbal lock (for
 // more info, see: http://en.wikipedia.org/wiki/Gimbal_lock)
 #define OUTPUT_READABLE_YAWPITCHROLL
-
-// uncomment "OUTPUT_READABLE_REALACCEL" if you want to see acceleration
-// components with gravity removed. This acceleration reference frame is
-// not compensated for orientation, so +X is always +X according to the
-// sensor, just without the effects of gravity. If you want acceleration
-// compensated for orientation, us OUTPUT_READABLE_WORLDACCEL instead.
-//#define OUTPUT_READABLE_REALACCEL
-
-// uncomment "OUTPUT_READABLE_WORLDACCEL" if you want to see acceleration
-// components with gravity removed and adjusted for the world frame of
-// reference (yaw is relative to initial orientation, since no magnetometer
-// is present in this case). Could be quite handy in some cases.
-//#define OUTPUT_READABLE_WORLDACCEL
-
-// uncomment "OUTPUT_TEAPOT" if you want output that matches the
-// format used for the InvenSense teapot demo
-//#define OUTPUT_TEAPOT
 
 
 
@@ -197,11 +180,12 @@ void setup() {
   Serial.println(F("Testing device connections..."));
   Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
 
+  //we didn't want to wait for ready...so we commented this out.  It initializes automatically now.
   // wait for ready
-  Serial.println(F("\nSend any character to begin DMP programming and demo: "));
-  while (Serial.available() && Serial.read()); // empty buffer
-  while (!Serial.available());                 // wait for data
-  while (Serial.available() && Serial.read()); // empty buffer again
+  //Serial.println(F("\nSend any character to begin DMP programming and demo: "));
+  //while (Serial.available() && Serial.read()); // empty buffer
+  //while (!Serial.available());                 // wait for data
+  //while (Serial.available() && Serial.read()); // empty buffer again
 
   // load and configure the DMP
   Serial.println(F("Initializing DMP..."));
@@ -295,8 +279,10 @@ void loop() {
     // (this lets us immediately read more without waiting for an interrupt)
     fifoCount -= packetSize;
 
+//main output
 #ifdef OUTPUT_READABLE_YAWPITCHROLL
     // display Euler angles in degrees
+    // all this prints out values to the Serial output.
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
@@ -309,13 +295,15 @@ void loop() {
     Serial.print("\t");
     Serial.println(gravity.z);
     
+    //read the z component of the gravity, and adjust the LED accordingly
     int valueZ = 128 + gravity.z * 127; //0-255
-    draw(255-valueZ, 255, valueZ); //fade red to blue
-    /*
-    int valueZ = 128 + gravity.z * 127; //0-255
+    //draw(255-valueZ, 255, valueZ); //fade red to blue
+    
     int valueXY = ((int) sqrt(pow(255*gravity.x,2) + pow(255*gravity.y,2))); //0-255
-    draw(255-valueZ, 255 - valueXY, valueZ); //fade red to green to blue*/
+    draw(255-valueZ, 255 - valueXY, valueZ); //fade red to green to blue
     //just an experiment, may or may not work now?
+    
+    
 #endif
 
     // blink LED to indicate activity
@@ -325,12 +313,14 @@ void loop() {
 }
 
 void draw(int r, int g, int b) {
+  //sets LED color based on RGB values
   analogWrite(color('r'), r);
   analogWrite(color('g'), g);
   analogWrite(color('b'), b);
 }
 
 int color(char color) {
+  //returns pins for each color according to ledPins (defined up top)
   switch(color) {
     case 'r':
       return ledPins[0];
