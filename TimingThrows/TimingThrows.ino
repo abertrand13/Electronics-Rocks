@@ -50,14 +50,20 @@ MPU6050 mpu;
 //MPU6050 mpu(0x69); // <-- use for AD0 high
 
 
-#define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
+#define LED_PIN 1 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
 bool blinkState = false;
 
+// throw timing variables
 boolean freeFalling; // set true if accelerometer is experiencing freefall; false if not
 int throwStartTime; // time in milliseconds between the program start and the last time the accelerometer entered freefall
 int throwEndTime; // time in milliseconds between the program start and the last time the accelerometer exited freefall
 int lastThrowDuration; // the duration in milliseconds that it was last in freefall (throwEndTime - throwStartTime)
 
+// wireless variables
+char computerChar;
+char arduinoChar; 
+
+int RXLED = 17;
 
 // MPU control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
@@ -85,14 +91,14 @@ void dmpDataReady() {
 // ================================================================
 
 void setup() {
-    // initializing our variables
+    // Initializing our variables
     freeFalling = false;
     throwStartTime = 0;
     throwEndTime = 0;
     lastThrowDuration = 0;  
   
-  
-  // The rest is setting up the MPU, using the I2C example code.
+    pinMode(RXLED, OUTPUT);
+    
   // join I2C bus (I2Cdev library doesn't do this automatically)
     #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
         Wire.begin();
@@ -102,9 +108,10 @@ void setup() {
     #endif
     
     // initialize serial communication
-    // (115200 chosen because it is required for Teapot Demo output, but it's
-    // really up to you depending on your project)
-    Serial.begin(115200);
+    // Serial.begin(115200); // begin regular serial at maximum baud
+    Serial.begin(9600); // begin regular serial at a good baud for transmitting wirelessly (?)
+    Serial1.begin(9600); // begin wireless serial (at the same baud)
+    
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
 
     // NOTE: 8MHz or slower host processors, like the Teensy @ 3.3v or Ardunio
@@ -175,6 +182,28 @@ void setup() {
 // ================================================================
 
 void loop() {
+  
+   //============
+   //= WIRELESS =
+   //============
+   // Receives information from computer
+    receiveCharFromComputer();
+  
+    // Receives information from arduino
+    receiveCharFromArduino();
+
+    if (computerChar == '1') {
+      digitalWrite(RXLED, HIGH);
+      //TXLED;
+    } else if (computerChar == '0') {
+      digitalWrite(RXLED, LOW);
+      //TXLED0;
+    }
+  
+    //===================
+    //= READING FROM MPU=
+    //===================
+    
     // first, we make sure the MPU is working
     // if programming failed, don't try to do anything
     if (!dmpReady) return;
@@ -230,6 +259,7 @@ void loop() {
               freeFalling = true;
               throwStartTime = millis();  // millis() is the current time since program start in milliseconds
               Serial.println("Free fall started!"); // for debugging purposes
+              Serial1.println("Free fall started!"); // for wireless debugging purposes
        }
        
        // if it feels a strong non-gravitational acceleration (here, we chose a threshold of 3000) and we haven't set freeFalling back to false
@@ -240,6 +270,8 @@ void loop() {
               lastThrowDuration = throwEndTime - throwStartTime;
               Serial.println("Free fall stopped. Duration:"); // for debugging purposes
               Serial.println(lastThrowDuration); // for debugging purposes
+              Serial1.println("Free fall stopped. Duration:"); // for wireless debugging purposes
+              Serial1.println(lastThrowDuration); // for wireless debugging purposes
           }
      
         // The below commented-out code uses the built-in getIntFreefallStatus function, which would be more ideal, but 
@@ -264,4 +296,24 @@ void loop() {
         digitalWrite(LED_PIN, blinkState);
         
     }
+}
+
+/**
+Receive a character from the computer.
+*/
+void receiveCharFromComputer() {
+  if (Serial1.available()) {
+    computerChar = (char) Serial1.read();
+    Serial.print(computerChar);
+  }
+}
+
+/**
+Receive a character from the Arduino.
+*/
+void receiveCharFromArduino() {
+  if (Serial.available()) {
+    arduinoChar = (char) Serial.read();
+    Serial1.print(arduinoChar);
+  }
 }
