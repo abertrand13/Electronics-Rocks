@@ -275,7 +275,8 @@ void loop() {
           }
      
         // The below commented-out code uses the built-in getIntFreefallStatus function, which would be more ideal, but 
-        // I haven't gotten it to ever get called. Maybe the threshold is too low, and we can fix that with ? Maybe we need to drop it
+        // I haven't gotten it to ever get called. Maybe the threshold is too low, and we can fix that with void MPU6050::setFreefallDetectionThreshold(uint8_t threshold) {
+// Maybe we need to drop it
         // without the USB cord attached?  
 //              if (mpu.getIntFreefallStatus() && !freeFalling) {
 //                    freeFalling = true;
