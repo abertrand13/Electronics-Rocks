@@ -93,7 +93,14 @@ void setColor(int* led, int* color){
  }
 }
 
-//just a dummy test function
+//one possible test to see whether the ball is in free fall. Assumes the MPU 6050 has 
+// already been properly initialized and that "VectorInt16 aa;" has been declared
 boolean isFreeFalling() {
-  return (random(1000) < 600) ? true : false;
+  int xAcc = aa.x;
+  int yAcc = aa.y;
+  int zAcc = aa.z;
+  
+  int a = sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2)); //magnitude of the 
+  
+  return (a < 1000) ? true : false; //the 1000 here is essentially arbi
 }

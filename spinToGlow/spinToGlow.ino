@@ -76,7 +76,11 @@ double mapDouble(double x, double in_min, double in_max, double out_min, double 
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-//just a dummy function here for demoing purposes
+//one possible angularSpeed function. assumes the MPU6050 has already been initialized and so forth
 double angularSpeed() {
-  return k;
+  int xRot = mpu.getRotationX();
+  int yRot = mpu.getRotationY();
+  int zRot = mpu.getRotationZ();
+  
+  return sqrt(pow(xRot,2) + pow(yRot,2) + pow(zRot,2));
 }
