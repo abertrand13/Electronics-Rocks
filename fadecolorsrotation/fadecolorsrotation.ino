@@ -288,7 +288,7 @@ void loop() {
     
     //THIS IS WHERE YOU SHOULD DO STUFF
         
-     fadeRedBlueRotation();
+     fadeRedBlueAcceleration();
            
 
     
@@ -329,16 +329,26 @@ void fadeRedBlueGravity(){
   //read the z component of the gravity, and adjust the LED accordingly
   mpu.dmpGetQuaternion(&q, fifoBuffer);
   mpu.dmpGetGravity(&gravity, &q);
+  Serial.print(gravity.x);
+  Serial.print("\t");
+  Serial.print(gravity.y);
+  Serial.print("\t");
+  Serial.println(gravity.z);
   int valueZ = 128 + gravity.z * 127; //0-255
   draw(255 - valueZ, 0, valueZ); //fade red to blue */
-  Serial.println(valueZ);
+  //Serial.println(valueZ);
+  
 }
 
 //fades from red to blue based on acceleration (doesn't really work yet)
 void fadeRedBlueAcceleration(){
-  int xAccel = abs(mpu.getAccelerationX());
-  int yAccel = abs(mpu.getAccelerationY());
-  int zAccel = abs(mpu.getAccelerationZ());
+  mpu.dmpGetQuaternion(&q, fifoBuffer);
+  mpu.dmpGetAccel(&aa, fifoBuffer);
+  mpu.dmpGetGravity(&gravity, &q);
+  mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
+  int xAccel = aaReal.x;
+  int yAccel = aaReal.y;
+  int zAccel = aaReal.z;
   int maxAccelXY = (xAccel > yAccel) ? xAccel : yAccel;
   int maxAccel = (maxAccelXY > zAccel) ? maxAccelXY : zAccel;
   
@@ -364,7 +374,7 @@ void fadeRedBlueAcceleration(){
   
   
   // Red to Blue based on acceleration
-  int accelVal = maxAccel * (double)255/30000.0;
+  int accelVal = maxAccel * (double)255/10000.0;
   accelVal = (accelVal > 255) ? 255 : accelVal;
   draw(accelVal, 0, 255 - accelVal); // red to blue
 }
