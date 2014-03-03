@@ -370,11 +370,16 @@ void fadeRedBlueAcceleration(){
   Serial.print("\t");
   Serial.print(zAccel); 
   Serial.print("\t");
-  Serial.println(maxAccel);
+  Serial.print(maxAccel);
   
   
   // Red to Blue based on acceleration
-  int accelVal = maxAccel * (double)255/10000.0;
+  int accelVal = (maxAccel-3500) * ((double)255/4000.0);
+  if (accelVal < 0){
+    accelVal = 0;
+  }
+  Serial.print("\t");
+  Serial.println(accelVal);
   accelVal = (accelVal > 255) ? 255 : accelVal;
   draw(accelVal, 0, 255 - accelVal); // red to blue
 }
