@@ -230,15 +230,27 @@ void setup() {
   // configure LED for output
   pinMode(LED_PIN, OUTPUT);
   
-  // Code to determine mode
-  // Button clicked to change code
-  // start timer
+  /*
+  Code to change the mode. The mode should change when the button is clicked.
+  The light should also change to reflect that change.
+  */
+  
+  boolean buttonClicked = false;
+  int modeSelectionStartTime = millis();
   while (true) {
-    if (buttonClicked()) {
+    if (!buttonClicked && buttonPressed()) {
+      buttonClicked = true;
       mode++;
       changeModeLight(mode);
-      // reset timer
+      modeSelectionStartTime = millis();
     }
+    
+    if (buttonReleased()) {
+      buttonClicked = false;
+    }
+    
+    int timeWaited = millis() - modeSelectionStartTime;
+    if (timeWaited > MODE_SELECTION_WAIT) break;
   }
   
 }
