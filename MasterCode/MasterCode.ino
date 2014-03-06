@@ -1,10 +1,10 @@
 
 /*
   Joey Asperger
-  Fades an LED from red to blue based on how fast the accelerometer is rotating.
-  Also contatains functions for fading from red to blue to green, for fading
-  based on acceleration, and for fading based on the z-component of gravity
-*/
+ Fades an LED from red to blue based on how fast the accelerometer is rotating.
+ Also contatains functions for fading from red to blue to green, for fading
+ based on acceleration, and for fading based on the z-component of gravity
+ */
 
 // Copyleft
 // Open source
@@ -66,7 +66,7 @@
 
 #include "MPU6050_6Axis_MotionApps20.h"
 //#include "MPU6050.h" // not necessary if using MotionApps include file
- #include "math.h"
+#include "math.h"
 //for ^ function
 
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
@@ -99,9 +99,6 @@ MPU6050 mpu;
  http://arduino.cc/forum/index.php/topic,109987.0.html
  http://code.google.com/p/arduino/issues/detail?id=958
  * ========================================================================= */
-
-// Mode
-int mode = 0;
 
 #define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
 bool blinkState = false;
@@ -144,17 +141,57 @@ void dmpDataReady() {
 // ===                      INITIAL SETUP                       ===
 // ================================================================
 
-int ledPins[] = {9, 10, 11};
+
+int ledPins[] = {
+  9, 10, 11};
+  
+// ====================================
+// Variables Relating to Changing Modes
+// ====================================
+// Button Pin
+int BUTTON_PIN = 15;
+
+// Mode
+int mode = 0;
+
+// Number of modes in mode selection
+int NUMBER_OF_MODES = 8;
+
+// Amount of time to wait to advance from mode selection
+int MODE_SELECTION_WAIT = 5000;
+
+/*
+Predefined colors
+ */
+int RED[] = {
+  255, 0, 0};    
+int GREEN[] = {
+  0, 255, 0}; 
+int BLUE[] = {
+  0, 0, 255}; 
+int YELLOW[] = {
+  255, 255, 0}; 
+int CYAN[] = {
+  0, 255, 255}; 
+int MAGENTA[] = {
+  255, 0, 255};
 
 void setup() {
-  //MY NOOB CODE
+  /*
+  Set up LEDs
+   */
   for(int i = 0;i < 3;i++) {
     pinMode(ledPins[i], OUTPUT);
   }
-  
+
+  /*
+  Set up button
+   */
+  pinMode(BUTTON_PIN, INPUT);
+
   //for random() in hotPotato()
   randomSeed(analogRead(0)); //initializes the random() function with analog noise from an unused pin
-  
+
   // join I2C bus (I2Cdev library doesn't do this automatically)
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
   Wire.begin();
@@ -231,31 +268,39 @@ void setup() {
 
   // configure LED for output
   pinMode(LED_PIN, OUTPUT);
-  
+
   /*
   Code to change the mode. The mode should change when the button is clicked.
-  The light should also change to reflect that change.
-  */
-  
+   The light should also change to reflect that change.
+   */
+  Serial.println("Button Stage");
+
   boolean buttonClicked = false;
   int modeSelectionStartTime = millis();
   changeModeLight(mode); //lights up the leds
+
   while (true) {
-    if (!buttonClicked && buttonPressed()) {
+    if (!buttonClicked && digitalRead(BUTTON_PIN) == LOW) {
       buttonClicked = true;
       mode = (mode + 1) % NUMBER_OF_MODES;
       changeModeLight(mode);
       modeSelectionStartTime = millis();
+      Serial.print("Button pressed: Mode ");
+      Serial.println(mode); 
     }
-    
-    if (buttonClicked && !buttonPressed()) {
+
+    if (buttonClicked && digitalRead(BUTTON_PIN) == HIGH) {
       buttonClicked = false;
+      Serial.println("Button released");
     }
-    
+
     int timeWaited = millis() - modeSelectionStartTime;
     if (timeWaited > MODE_SELECTION_WAIT) break;
   }
-  
+
+  Serial.print("End Button Stage, Mode Selected: ");
+  Serial.println(mode);
+
 }
 
 double maxOverallAccel = 0;
@@ -315,18 +360,18 @@ void loop() {
     digitalWrite(LED_PIN, blinkState);
 
     //main output
-    
+
     //THIS IS WHERE YOU SHOULD DO STUFF
-     
-     switch(mode) {
-       case 0:
-         fadeRedBlueAcceleration();
-         break;
-       case 1:
-         hotPotato();
-         break;
-     }           
-    
+
+    switch(mode) {
+    case 0:
+      fadeRedBlueAcceleration();
+      break;
+    case 1:
+      hotPotato();
+      break;
+    }           
+
   }
 }
 
@@ -335,9 +380,9 @@ void fadeRedBlueRotation(){
   int xRot = abs(mpu.getRotationX());
   int yRot = abs(mpu.getRotationY());
   int zRot = abs(mpu.getRotationZ());
-  
+
   int maxRot = sqrt(pow(xRot,2) + pow(yRot,2) + pow(zRot,2));
-  
+
   int rotVal = maxRot * (255/8000.0);
   rotVal = (rotVal > 255) ? 255 : rotVal; //normalize it to never be more than 255
   draw(rotVal, 0, 255 - rotVal); // R-B
@@ -350,9 +395,9 @@ void fadeRBGRotation(){
   int xRot = abs(mpu.getRotationX());
   int yRot = abs(mpu.getRotationY());
   int zRot = abs(mpu.getRotationZ());
-  
+
   int maxRot = sqrt(pow(xRot,2) + pow(yRot,2) + pow(zRot,2));
-  
+
   int rotVal = maxRot * (255/8000.0);
   rotVal = (rotVal > 255) ? 255 : rotVal; //normalize it to never be more than 255
   fadeRedBlueGreen(rotVal); // R-B-G 
@@ -371,7 +416,7 @@ void fadeRedBlueGravity(){
   int valueZ = 128 + gravity.z * 127; //0-255
   draw(255 - valueZ, 0, valueZ); //fade red to blue */
   //Serial.println(valueZ);
-  
+
 }
 
 //fades from red to blue based on acceleration (doesn't really work yet)
@@ -385,18 +430,18 @@ void fadeRedBlueAcceleration(){
   int zAccel = aaReal.z;
   int maxAccelXY = (xAccel > yAccel) ? xAccel : yAccel;
   int maxAccel = (maxAccelXY > zAccel) ? maxAccelXY : zAccel;
-  
-  
+
+
   // Calculating stats (just for testing, don't worry about it)
   /*
   maxOverallAccel =  (maxOverallAccel > maxAccel) ? maxOverallAccel : maxAccel;
-  accelValues++;
-  if (accelValues == 1){
-    avgAccel = maxAccel;
-  } else{
-    avgAccel = avgAccel - avgAccel/accelValues + maxAccel/accelValues;
-  }*/
-  
+   accelValues++;
+   if (accelValues == 1){
+   avgAccel = maxAccel;
+   } else{
+   avgAccel = avgAccel - avgAccel/accelValues + maxAccel/accelValues;
+   }*/
+
   Serial.print("\t");
   Serial.print(xAccel); 
   Serial.print("\t");
@@ -405,8 +450,8 @@ void fadeRedBlueAcceleration(){
   Serial.print(zAccel); 
   Serial.print("\t");
   Serial.print(maxAccel);
-  
-  
+
+
   // Red to Blue based on acceleration
   int accelVal = (maxAccel-3500) * ((double)255/4000.0);
   if (accelVal < 0){
@@ -428,90 +473,96 @@ void draw(int r, int g, int b) {
 int color(char color) {
   //returns pins for each color according to ledPins (defined up top)
   switch(color) {
-    case 'r':
-      return ledPins[0];
+  case 'r':
+    return ledPins[0];
     break;
-    
-    case 'g':
-      return ledPins[1];
+
+  case 'g':
+    return ledPins[1];
     break;
-  
-    case 'b':
-      return ledPins[2];
+
+  case 'b':
+    return ledPins[2];
     break;
   }  
 }
 
 void fadeRedBlueGreen(int val){
- int r = (val*2 - 255 > 0) ? (val*2 - 255) : 0;
- int b = (128 - val) *2;
- int g = ((((255 - val) * 2) - 255) > 0) ? ((255 - val) * 2 - 255) : 0;
- draw(r, g, b); 
+  int r = (val*2 - 255 > 0) ? (val*2 - 255) : 0;
+  int b = (128 - val) *2;
+  int g = ((((255 - val) * 2) - 255) > 0) ? ((255 - val) * 2 - 255) : 0;
+  draw(r, g, b); 
 }
 
 //=====Hot Potato Feature=======
 
 void hotPotato() {
-  
+
   int t_on = 100; //time (in ms) that the led should be on (per blink)
   int t_off0 = 1000; //time (in ms) that the led should be off at the loop's start
   int t_off; //time that the led should be off (per blink). this will change over the course of the loop
-  
-  int rON[] = {255,0,0}; //lights red LED
-  int bON[] = {0,0,255}; //lights blue LED
-  int OFF[] = {0,0,0};   
-  
+
+  int rON[] = {
+    255,0,0  }; //lights red LED
+  int bON[] = {
+    0,0,255  }; //lights blue LED
+  int OFF[] = {
+    0,0,0  };   
+
   int duration = random(10000,30000); //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
   int t_lastSwitch = 0;
   int t = 0;
-  
+
   Serial.println(duration);
-  
+
   boolean isOn = true;
   setColor(ledPins, bON);
-  
+
   while (t < duration) {
-    
+
     //these if statements blink the blue led
     if (isOn){
       if (t - t_lastSwitch > t_on) { //if the led's on, check if it's time to turn it off
         isOn = false;
         t_lastSwitch = t;
       }
-    } else {//if the led's off, check if it's time to turn it on
+    } 
+    else {//if the led's off, check if it's time to turn it on
       t_off = map(t, 0, duration, t_off0, 0); //scales the off time down linearly according to how close the game is to ending 
-                                              //(i.e. according to how t compares with duration)
+      //(i.e. according to how t compares with duration)
       if (t - t_lastSwitch > t_off) {  
-         isOn = true;
-         t_lastSwitch = t;
+        isOn = true;
+        t_lastSwitch = t;
       }
     }
-    
+
     if (isOn) setColor(ledPins, bON); 
     else setColor(ledPins, OFF);
-    
+
     t += 10;
     delay(10);
   }
- 
- while (isFreeFalling()){
-   delay(500); //don't end the game while the ball is in mid-throw
-   Serial.println("Free Fall!");
- }
- 
- setColor(ledPins, rON); //game is over, turn the led red
-            
+
+  while (isFreeFalling()){
+    delay(500); //don't end the game while the ball is in mid-throw
+    Serial.println("Free Fall!");
+  }
+
+  setColor(ledPins, rON); //game is over, turn the led red
+
+  /*
  while (true) {
    if (buttonPressed()) break; //waits for the user to press the reset button to reset the game
- }
- 
+   }
+   */
+
 }
 
 //for common anode led
 void setColor(int* led, int* color){
- for(int i = 0; i < 3; i++){
-   analogWrite(led[i], 255-color[i]); //note: a low output turns the led on
- }
+  for(int i = 0; i < 3; i++){
+    analogWrite(led[i], 255-color[i]); //note: a low output turns the led on
+  }
 }
 
 //one possible test to see whether the ball is in free fall. Assumes the MPU 6050 has 
@@ -524,24 +575,18 @@ boolean isFreeFalling() {
   int xAcc = aa.x;
   int yAcc = aa.y;
   int zAcc = aa.z;
-  
+
   int a = sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2)); //magnitude of the 
-  
+
   return (a < 1000) ? true : false; //the 1000 here is essentially arbitrary
 }
 
 void changeModeLight(int mode) {
-  int RED[] = {255, 0, 0};    
-  int GREEN[] = {0, 255, 0}; 
-  int BLUE[] = {0, 0, 255}; 
-  int YELLOW[] = {255, 255, 0}; 
-  int CYAN[] = {0, 255, 255}; 
-  int MAGENTA[] = {255, 0, 255};
-
-  int* COLORS[] = {RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA}; 
+  int* COLORS[] = {
+    RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA  }; 
   //might as well make as many pretty colors as possible 
-  
+
   int col = mode%6;//loop back around if mode > 5
   setColor(ledPins, COLORS[col]);
-
 }
+
