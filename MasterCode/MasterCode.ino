@@ -1,22 +1,12 @@
 
-/*
-  Joey Asperger
- Fades an LED from red to blue based on how fast the accelerometer is rotating.
- Also contatains functions for fading from red to blue to green, for fading
- based on acceleration, and for fading based on the z-component of gravity
- */
-
+// ===========================
+// MASTER CODE - Creative Name for our Product
+// Authors: EE 27N (names in alphabetical order eventually)
+//
 // Copyleft
 // Open source
 // Everything else that indicates that you should totally download this.
 //
-// Gravity Sensing :: Rev0
-// Basic code which uses the IC2dev library and MPU6050 accelerometer/gyro to set the color of an LED
-// based on whether the accelerometer is facing up or down.
-// Current setting is red for up, blue for down, and faded in between.
-//
-// Initial contributions: Joey Asperger, Andrew Nguyen, Tucker Leavitt, Alex Bertrand
-
 // I2C device class (I2Cdev) demonstration Arduino sketch for MPU6050 class using DMP (MotionApps v2.0)
 // 6/21/2012 by Jeff Rowberg <jeff@rowberg.net>
 // Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
@@ -142,9 +132,18 @@ void dmpDataReady() {
 // ================================================================
 
 
+// =====================
+// Serial Variables
+// =====================
+char computerChar;
+char arduinoChar;
+
+// =====================
+// Light Variables
+// =====================
 int ledPins[] = {
   9, 10, 11};
-  
+
 // ====================================
 // Variables Relating to Changing Modes
 // ====================================
@@ -176,7 +175,20 @@ int CYAN[] = {
 int MAGENTA[] = {
   255, 0, 255};
 
+int* COLORS[] = {
+    RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA    }; 
+
 void setup() {
+  // ====================
+  // SERIAL COMMUNICATION
+  // ====================
+  Serial.begin(9600);
+  Serial1.begin(9600);
+
+  // ====================
+  // HARDWARE SETUP
+  // ====================
+
   /*
   Set up LEDs
    */
@@ -203,8 +215,7 @@ void setup() {
   // initialize serial communication
   // (115200 chosen because it is required for Teapot Demo output, but it's
   // really up to you depending on your project)
-  Serial.begin(115200);
-  while (!Serial); // wait for Leonardo enumeration, others continue immediately
+  //while (!Serial); // wait for Leonardo enumeration, others continue immediately
 
   // NOTE: 8MHz or slower host processors, like the Teensy @ 3.3v or Ardunio
   // Pro Mini running at 3.3v, cannot handle this baud rate reliably due to
@@ -274,12 +285,31 @@ void setup() {
    The light should also change to reflect that change.
    */
   Serial.println("Button Stage");
-
+  Serial1.print("Enter Mode: 0 - ");
+  Serial1.println(NUMBER_OF_MODES); 
+  
+  
+  // Convert NUMBER_OF_MODES to a string so that can access characters
+  String numModesString = String(NUMBER_OF_MODES);
+  
   boolean buttonClicked = false;
   int modeSelectionStartTime = millis();
   changeModeLight(mode); //lights up the leds
 
   while (true) {
+    // Receives information from computer
+    receiveCharFromComputer();
+
+    // Receives information from arduino
+    receiveCharFromArduino();
+
+    if (computerChar >= '0' && computerChar <= numModesString[0]) {
+      mode = computerChar - '0';
+      changeModeLight(mode);
+      computerChar = 'A';
+      //break;
+    }
+
     if (!buttonClicked && digitalRead(BUTTON_PIN) == LOW) {
       buttonClicked = true;
       mode = (mode + 1) % NUMBER_OF_MODES;
@@ -295,7 +325,7 @@ void setup() {
     }
 
     int timeWaited = millis() - modeSelectionStartTime;
-    if (timeWaited > MODE_SELECTION_WAIT) break;
+    //if (timeWaited > MODE_SELECTION_WAIT) break;
   }
 
   Serial.print("End Button Stage, Mode Selected: ");
@@ -374,6 +404,35 @@ void loop() {
 
   }
 }
+
+
+// =====================
+// SERIAL HELPER METHODS
+// =====================
+
+/**
+ * Receive a character from the computer.
+ */
+void receiveCharFromComputer() {
+  if (Serial1.available()) {
+    computerChar = (char) Serial1.read();
+    Serial.print(computerChar);
+  }
+}
+
+/**
+ * Receive a character from the Arduino.
+ */
+void receiveCharFromArduino() {
+  if (Serial.available()) {
+    arduinoChar = (char) Serial.read();
+    Serial1.print(arduinoChar);
+  }
+}
+
+// ====================
+// LIGHT HELPER METHODS
+// ====================
 
 // Fade from red to blue based on rotation speed
 void fadeRedBlueRotation(){
@@ -503,11 +562,11 @@ void hotPotato() {
   int t_off; //time that the led should be off (per blink). this will change over the course of the loop
 
   int rON[] = {
-    255,0,0  }; //lights red LED
+    255,0,0    }; //lights red LED
   int bON[] = {
-    0,0,255  }; //lights blue LED
+    0,0,255    }; //lights blue LED
   int OFF[] = {
-    0,0,0  };   
+    0,0,0    };   
 
   int duration = random(10000,30000); //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
   int t_lastSwitch = 0;
@@ -582,11 +641,16 @@ boolean isFreeFalling() {
 }
 
 void changeModeLight(int mode) {
-  int* COLORS[] = {
-    RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA  }; 
+  Serial.print("Mode: ");
+  Serial.println(mode);
+  
+  
   //might as well make as many pretty colors as possible 
 
   int col = mode%6;//loop back around if mode > 5
+  
+  Serial.println(col);
   setColor(ledPins, COLORS[col]);
 }
+
 
