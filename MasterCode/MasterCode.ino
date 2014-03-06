@@ -157,7 +157,7 @@ int mode = 0;
 int NUMBER_OF_MODES = 8;
 
 // Amount of time to wait to advance from mode selection
-int MODE_SELECTION_WAIT = 5000;
+int MODE_SELECTION_WAIT = 7000;
 
 /*
 Predefined colors
@@ -307,7 +307,7 @@ void setup() {
       mode = computerChar - '0';
       changeModeLight(mode);
       computerChar = 'A';
-      //break;
+      break;
     }
 
     if (!buttonClicked && digitalRead(BUTTON_PIN) == LOW) {
@@ -325,7 +325,7 @@ void setup() {
     }
 
     int timeWaited = millis() - modeSelectionStartTime;
-    //if (timeWaited > MODE_SELECTION_WAIT) break;
+    if (timeWaited > MODE_SELECTION_WAIT) break;
   }
 
   Serial.print("End Button Stage, Mode Selected: ");
@@ -641,13 +641,8 @@ boolean isFreeFalling() {
 }
 
 void changeModeLight(int mode) {
-  Serial.print("Mode: ");
-  Serial.println(mode);
   
-  
-  //might as well make as many pretty colors as possible 
-
-  int col = mode%6;//loop back around if mode > 5
+  int col = mode%6; //loop back around if mode > 5
   
   Serial.println(col);
   setColor(ledPins, COLORS[col]);
