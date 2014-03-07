@@ -201,8 +201,8 @@ void setup() {
    */
   pinMode(BUTTON_PIN, INPUT);
 
-  //for random() in hotPotato()
-  randomSeed(analogRead(0)); //initializes the random() function with analog noise from an unused pin
+  //initializes the random() function with analog noise from an unused pin
+  randomSeed(analogRead(0)); //is this an analog input on the fio?
 
   // join I2C bus (I2Cdev library doesn't do this automatically)
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
@@ -609,11 +609,11 @@ void hotPotato() {
 
   setColor(ledPins, rON); //game is over, turn the led red
 
-  /*
- while (true) {
-   if (buttonPressed()) break; //waits for the user to press the reset button to reset the game
+ 
+ while (digitalRead(BUTTON_PIN) == LOW) {
+   //waits for the user to press the reset button to reset the game
    }
-   */
+   
 
 }
 

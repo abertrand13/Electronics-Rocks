@@ -75,10 +75,10 @@ void hotPotato() {
     delay(10);
   }
  
- while (isFreeFalling()){
+ /*while (isFreeFalling()){
    delay(500); //don't end the game while the ball is in mid-throw
    Serial.println("Free Fall!");
- }
+ }*/
  
  setColor(ledPins, rON); //game is over, turn the led red
  
