@@ -247,6 +247,7 @@ void loop() {
         
         // calculate magnitude of the non-gravitational acceleration it feels from aa.
         // closer to zero -> closer to freefall
+        // 1L used to cast the value in the square root as a long (so it can go greater than 32,768), (int) brings it back to int
         int magnitude = (int) sqrt(1L*aa.x*aa.x+1L*aa.y*aa.y+1L*aa.z*aa.z);
     
         // print on the serial, for testing purposes
@@ -255,7 +256,7 @@ void loop() {
         // if it's feeling very little non-gravitational acceleration (say, below 1000) and we haven't set freeFalling to true
         // yet, set it to true and set throwStartTime. The !freeFalling part is to make it only change throwStartTime once
         // per throw, rather than changing over and over as it's in midair.
-       if (abs(magnitude)<1000 && !freeFalling) { / 
+       if (abs(magnitude)<1000 && !freeFalling) { 
               freeFalling = true;
               throwStartTime = millis();  // millis() is the current time since program start in milliseconds
               Serial.println("Free fall started!"); // for debugging purposes
