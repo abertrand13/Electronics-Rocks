@@ -143,6 +143,20 @@ char arduinoChar;
 // =====================
 int ledPins[] = {
   9, 10, 11};
+  
+// ==========================
+// LightCycle Mode Variables
+// ==========================
+boolean freeFalling; // set to true if accelerometer is experiencing freefall; false if not
+int throwStartTime; // time in milliseconds between the program start and the last time the accelerometer entered freefall
+int throwEndTime; // time in milliseconds between the program start and the last time the accelerometer exited freefall
+int lastThrowDuration = 100; // the duration in milliseconds that it was last in freefall (throwEndTime - throwStartTime). First throw 100 default arbitrary - fix?
+
+// ========================
+// Initial Config Variables
+// ========================
+// Distance in cm (mm?) from center of mass of the ball. Used for centripetal acceleration offset in detecting freefall.
+int distFromCOM = 2; // TODO: Allow the user to measure and enter this somehow.
 
 // ====================================
 // Variables Relating to Changing Modes
@@ -400,6 +414,9 @@ void loop() {
     case 1:
       hotPotato();
       break;
+    case 2:
+      lightCycle();
+      break;
     }           
 
   }
@@ -434,16 +451,27 @@ void receiveCharFromArduino() {
 // LIGHT HELPER METHODS
 // ====================
 
-// Fade from red to blue based on rotation speed
-void fadeRedBlueRotation(){
+// Returns the pythagorean sum of the x-, y-, and z-rotation values
+// Comment: How accurate is this? Can rotation speed components be added like vectors?
+int getRotationSpeed() {
   int xRot = abs(mpu.getRotationX());
   int yRot = abs(mpu.getRotationY());
   int zRot = abs(mpu.getRotationZ());
 
-  int maxRot = sqrt(pow(xRot,2) + pow(yRot,2) + pow(zRot,2));
+  // If this goes wacko, it's int overflow - change the ints to longs and cast it back at the end.
+  return sqrt(pow(xRot,2) + pow(yRot,2) + pow(zRot,2));
+}
 
+// Normalizes getRotationSpeed() to never be more than 255
+int getRotationSpeed255() { 
+  int maxRot = getRotationSpeed();
   int rotVal = maxRot * (255/8000.0);
   rotVal = (rotVal > 255) ? 255 : rotVal; //normalize it to never be more than 255
+  return rotVal;
+}
+// Fade from red to blue based on rotation speed
+void fadeRedBlueRotation(){
+  rotVal = getRotationSpeed255();
   draw(rotVal, 0, 255 - rotVal); // R-B
   //fadeRedBlueGreen(rotVal); // R-B-G 
 }
@@ -451,14 +479,7 @@ void fadeRedBlueRotation(){
 // Fade from red to blue to green based on rotational speed
 // Doesn't work all that well, the colors don't fade very evenly so it flickers a lot
 void fadeRBGRotation(){
-  int xRot = abs(mpu.getRotationX());
-  int yRot = abs(mpu.getRotationY());
-  int zRot = abs(mpu.getRotationZ());
-
-  int maxRot = sqrt(pow(xRot,2) + pow(yRot,2) + pow(zRot,2));
-
-  int rotVal = maxRot * (255/8000.0);
-  rotVal = (rotVal > 255) ? 255 : rotVal; //normalize it to never be more than 255
+  rotVal = getRotationSpeed255();
   fadeRedBlueGreen(rotVal); // R-B-G 
 }
 
@@ -553,6 +574,24 @@ void fadeRedBlueGreen(int val){
   draw(r, g, b); 
 }
 
+/*
+ * Precondition: 0 <= val, rStopVal, bStartVal <= 1
+ * Fades from red to blue in a nice, nonlinear way.
+ * By default (if only passed one argument, val), it's a  changing shade of purple the whole time.
+ * To have red be completely turned off before the throw's end (so it's just blue of increasing brightness), input rStopVal such that 0.5 <= rStopVal < 1.
+ * Likewise, to have blue only start coming on partway in, input bStartVal such that 0.0 < bStartVal <= 0.5.
+ */
+void fadeRedBlueParabolically(float val, float rStopVal = 1.0, float bStartVal = 0.0) {
+  // Following coordinates in comments are in (time, brightness value) format
+  int r = 255 * (1 - pow(val/rStopVal, 2)); // Given by parabola with vertex at (0, 255) and x-intercept (rStopVal, 0)
+  int b = 255 * (1 - pow((val-1)/bStartVal, 2)); // Given by parabola with x-intercept at (bStartVal, 0) and vertex at (1, 255);
+  // We're guaranteed r, b <= 1 because 0<=val<=1; however, we still need to make sure r, b >= 0.
+  r = (r < 0) ? 0 : r;
+  b = (b < 0) ? 0 : b;
+  
+  draw(r, 0, b); 
+}
+
 //=====Hot Potato Feature=======
 
 void hotPotato() {
@@ -624,7 +663,7 @@ void setColor(int* led, int* color){
   }
 }
 
-//one possible test to see whether the ball is in free fall. Assumes the MPU 6050 has 
+// one possible test to see whether the ball is in free fall. Assumes the MPU 6050 has 
 // already been properly initialized and that "VectorInt16 aa;" has been declared
 boolean isFreeFalling() {
   mpu.dmpGetQuaternion(&q, fifoBuffer);
@@ -635,13 +674,27 @@ boolean isFreeFalling() {
   int yAcc = aa.y;
   int zAcc = aa.z;
 
-  int a = sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2)); //magnitude of the 
+  int a = sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2)); //magnitude of the acceleration
+  // NOTE: pow(_Acc,2) may cause int overflow! If weird numbers start coming out, try the following:
+  /*
+  long xAcc = (long) aa.x;
+  long yAcc = (long) aa.y;
+  long zAcc = (long) aa.z;
+  int a = (int) sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2));
+  */
 
   return (a < 1000) ? true : false; //the 1000 here is essentially arbitrary
+  /*
+  // If the ball is spinning and the MPU is not at the ball's center of mass (COM), the MPU will experience (and report) an extra
+  // centripetal acceleration. This needs to be removed to get the proper acceleration of the ball's COM for proper freefall detection.
+  int rotVal = getRotationSpeed() / 500; //this 500 is arbitrary but important to fine-tune
+  int centripetalOffset = pow(rotVal, 2)*distFromCOM;
+  int aCOM = a - centripetalOffset;
+  return (aCOM < 1000) ? true : false;
+  */
 }
 
 void changeModeLight(int mode) {
-  
   int col = mode%6; //loop back around if mode > 5
   
   Serial.println(col);
@@ -649,3 +702,56 @@ void changeModeLight(int mode) {
 }
 
 
+//=========Light Cycle Feature==========
+/*
+ * Times the duration of each throw, and fades from red to blue linearly or parabolically using the duration of the previous throw.
+ *
+ * Note: this function is designed delay free to avoid FIFO overflow. So, the program will be quickly alternating between the main loop and this function.
+ * Pros of this approach: No FIFO overflow -> better MPU sensing
+ * Cons of this approach: Requires more global variables
+ *
+ * TODO: maybe have it accept a light output function as a parameter?
+ */
+void lightCycle() {
+  
+  // Detecting the start of a throw
+  if (isFreeFalling() && !freeFalling) { 
+    freeFalling = true;
+    throwStartTime = millis();  // millis() is the current time since program start in milliseconds
+    Serial.println("Free fall started!"); // for debugging purposes
+    Serial1.println("Free fall started!"); // for wireless debugging purposes
+   }
+  
+  // Updating the lights mid-throw
+  if (isFreeFalling() && freeFalling) {
+    int airTime = millis() - throwStartTime; // Time in milliseconds since leaving the hand
+    float cycleProgress = ((double) airTime) / lastThrowDuration; // "Progress" through the cycle of the throw (described better below)
+    // TODO: clean up the casting?
+    cycleProgress = (cycleProgress > 1) ? 1 : cycleProgress;
+    // cycleProgress = 0 when it leaves the hand, then increases linearly until "lastThrowDuration" milliseconds after leaving the hand, where it stays at 1
+    // Note: 0 <= cycleProgress <= 1
+    
+    // === Linear Fading ====
+    int cycleProgress255 = (int) (cycleProgress * 255);
+    int red = 255 - cycleProgress255; // Starts at 255, linearly declines to 0
+    int blue = cycleProgress255; // Starts at 0, linearly increases to 255
+    draw(red, 0, blue);
+    
+    // === Parabolic Fading ====
+    // fadeRedBlueParabolically(cycleProgress, 0.6, 0.4);
+  }  
+    
+ // Detecting the end of a throw   
+ // If it is no longer in free fall and we haven't set freeFalling back to false yet, set it to false, and set throwEndTime and lastThrowDuration.
+ // Potential issue: is the minimum accel threshold for !isFreeFalling() too low? 
+ // Do we need a isStronglyAccelerating() function with a higher minimum threshold instead of !isFreeFalling()?
+  if (freeFalling && !isFreeFalling()) {
+      freeFalling = false;
+      throwEndTime = millis();
+      lastThrowDuration = throwEndTime - throwStartTime;
+      Serial.println("Free fall stopped. Duration:"); // for debugging purposes
+      Serial.println(lastThrowDuration); // for debugging purposes
+      Serial1.println("Free fall stopped. Duration:"); // for wireless debugging purposes
+      Serial1.println(lastThrowDuration); // for wireless debugging purposes
+   }
+}
