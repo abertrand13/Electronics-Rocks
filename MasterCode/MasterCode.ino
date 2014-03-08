@@ -143,7 +143,7 @@ char arduinoChar;
 // =====================
 int ledPins[] = {
   9, 10, 11};
-  
+
 // ==========================
 // LightCycle Mode Variables
 // ==========================
@@ -161,6 +161,9 @@ int distFromCOM = 2; // TODO: Allow the user to measure and enter this somehow.
 // ====================================
 // Variables Relating to Changing Modes
 // ====================================
+// Escape char
+int ESCAPE_CHAR = 27;
+
 // Button Pin
 int BUTTON_PIN = 15;
 
@@ -188,9 +191,15 @@ int CYAN[] = {
   0, 255, 255}; 
 int MAGENTA[] = {
   255, 0, 255};
+int WHITE[] = {
+  255, 255, 255}; 
+int BLACK[] = {
+  0, 0, 0}; 
+
+int* currentColor = WHITE;
 
 int* COLORS[] = {
-    RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA    }; 
+  RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA    }; 
 
 void setup() {
   // ====================
@@ -202,7 +211,7 @@ void setup() {
   // ====================
   // HARDWARE SETUP
   // ====================
-
+  
   /*
   Set up LEDs
    */
@@ -294,66 +303,16 @@ void setup() {
   // configure LED for output
   pinMode(LED_PIN, OUTPUT);
 
-  /*
-  Code to change the mode. The mode should change when the button is clicked.
-   The light should also change to reflect that change.
-   */
-  Serial.println("Button Stage");
-  Serial1.print("Enter Mode: 0 - ");
-  Serial1.println(NUMBER_OF_MODES); 
-  
-  
-  // Convert NUMBER_OF_MODES to a string so that can access characters
-  String numModesString = String(NUMBER_OF_MODES);
-  
-  boolean buttonClicked = false;
-  int modeSelectionStartTime = millis();
-  changeModeLight(mode); //lights up the leds
-
-  while (true) {
-    // Receives information from computer
-    receiveCharFromComputer();
-
-    // Receives information from arduino
-    receiveCharFromArduino();
-
-    if (computerChar >= '0' && computerChar <= numModesString[0]) {
-      mode = computerChar - '0';
-      changeModeLight(mode);
-      computerChar = 'A';
-      break;
-    }
-
-    if (!buttonClicked && digitalRead(BUTTON_PIN) == LOW) {
-      buttonClicked = true;
-      mode = (mode + 1) % NUMBER_OF_MODES;
-      changeModeLight(mode);
-      modeSelectionStartTime = millis();
-      Serial.print("Button pressed: Mode ");
-      Serial.println(mode); 
-    }
-
-    if (buttonClicked && digitalRead(BUTTON_PIN) == HIGH) {
-      buttonClicked = false;
-      Serial.println("Button released");
-    }
-
-    int timeWaited = millis() - modeSelectionStartTime;
-    if (timeWaited > MODE_SELECTION_WAIT) break;
-  }
-
-  Serial.print("End Button Stage, Mode Selected: ");
-  Serial.println(mode);
-
+  enterModeSelection();
 }
 
 double maxOverallAccel = 0;
 double avgAccel = 0;
 double accelValues = 0;
 
-// ================================================================
-// ===                    MAIN PROGRAM LOOP                     ===
-// ================================================================
+// =======================================================================================================================
+//                             MAIN PROGRAM LOOP                    
+// =======================================================================================================================
 
 void loop() {
   // if programming failed, don't try to do anything
@@ -407,6 +366,15 @@ void loop() {
 
     //THIS IS WHERE YOU SHOULD DO STUFF
 
+    // Receives information from computer
+    receiveCharFromComputer();
+
+    // Receives information from arduino
+    receiveCharFromArduino();
+
+    checkForEscape();
+
+
     switch(mode) {
     case 0:
       Serial.println("Running red blue acceleration");
@@ -419,9 +387,14 @@ void loop() {
       Serial.println("End hot potato");
       break;
     case 2:
-      Serial.println("Running light cycle");
       lightCycle();
-      Serial.println("End light cycle");
+      break;
+    case 3:
+      Serial.println("Running temperature");
+      while (true) { 
+        double temp = ((double)mpu.getTemperature() + 12412.0) / 340.0;
+        Serial.println(temp);
+      }
       break;
     }           
 
@@ -453,9 +426,100 @@ void receiveCharFromArduino() {
   }
 }
 
+void checkForEscape() {
+  if (computerChar == 'r') {
+      computerChar = 'A';
+      blinkLight(125);
+      blinkLight(125);
+      blinkLight(125);
+      delay(250);
+      enterModeSelection();
+    }
+}
+
+// ====================
+// MODE SELECTION
+// ====================
+/*
+  Code to change the mode. The mode should change when the button is clicked.
+ The light should also change to reflect that change.
+ */
+void enterModeSelection() {
+  Serial.println("Button Stage");
+  Serial1.print("Enter Mode: 0 - ");
+  Serial1.println(NUMBER_OF_MODES); 
+
+
+  // Convert NUMBER_OF_MODES to a string so that can access characters
+  String numModesString = String(NUMBER_OF_MODES);
+
+  boolean buttonClicked = false;
+  int modeSelectionStartTime = millis();
+  changeModeLight(mode); //lights up the leds
+
+  while (true) {
+    // Receives information from computer
+    receiveCharFromComputer();
+
+    // Receives information from arduino
+    receiveCharFromArduino();
+
+    if (computerChar >= '0' && computerChar <= numModesString[0]) {
+      mode = computerChar - '0';
+      changeModeLight(mode);
+      computerChar = 'A';
+      break;
+    }
+
+    if (!buttonClicked && digitalRead(BUTTON_PIN) == LOW) {
+      buttonClicked = true;
+      mode = (mode + 1) % NUMBER_OF_MODES;
+      changeModeLight(mode);
+      modeSelectionStartTime = millis();
+      Serial.print("Button pressed: Mode ");
+      Serial.println(mode); 
+    }
+
+    if (buttonClicked && digitalRead(BUTTON_PIN) == HIGH) {
+      buttonClicked = false;
+      Serial.println("Button released");
+    }
+
+    int timeWaited = millis() - modeSelectionStartTime;
+    if (timeWaited > MODE_SELECTION_WAIT) break;
+  }
+
+  blinkLight(125);
+  blinkLight(125);
+  blinkLight(125);
+  delay(250);
+
+  Serial.print("End Button Stage, Mode Selected: ");
+  Serial.println(mode);
+  
+  Serial1.print("Mode Selected: ");
+  Serial1.println(mode);
+}
+
 // ====================
 // LIGHT HELPER METHODS
 // ====================
+
+void blinkLight(int pause) {
+  lightOff();
+  delay(pause);
+  lightOn();
+  delay(pause);
+  lightOff();
+}
+
+void lightOff() {
+  setColor(ledPins, BLACK);
+}
+
+void lightOn() {
+  setColor(ledPins, currentColor);
+}
 
 // Returns the pythagorean sum of the x-, y-, and z-rotation values
 // Comment: How accurate is this? Can rotation speed components be added like vectors?
@@ -547,7 +611,7 @@ void fadeRedBlueAcceleration(){
   Serial.println(accelVal);
   accelVal = (accelVal > 255) ? 255 : accelVal;
   draw(accelVal, 0, 255 - accelVal); // red to blue
-}
+} 
 
 void draw(int r, int g, int b) {
   //sets LED color based on RGB values
@@ -594,7 +658,7 @@ void fadeRedBlueParabolically(float val, float rStopVal = 1.0, float bStartVal =
   // We're guaranteed r, b <= 1 because 0<=val<=1; however, we still need to make sure r, b >= 0.
   r = (r < 0) ? 0 : r;
   b = (b < 0) ? 0 : b;
-  
+
   draw(r, 0, b); 
 }
 
@@ -607,11 +671,11 @@ void hotPotato() {
   int t_off; //time that the led should be off (per blink). this will change over the course of the loop
 
   int rON[] = {
-    255,0,0    }; //lights red LED
+    255,0,0          }; //lights red LED
   int bON[] = {
-    0,0,255    }; //lights blue LED
+    0,0,255          }; //lights blue LED
   int OFF[] = {
-    0,0,0    };   
+    0,0,0          };   
 
   int duration = random(10000,30000); //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
   int t_lastSwitch = 0;
@@ -623,6 +687,14 @@ void hotPotato() {
   setColor(ledPins, bON);
 
   while (t < duration) {
+    
+    // Receives information from computer
+    receiveCharFromComputer();
+
+    // Receives information from arduino
+    receiveCharFromArduino();
+    
+    checkForEscape();
 
     //these if statements blink the blue led
     if (isOn){
@@ -654,11 +726,11 @@ void hotPotato() {
 
   setColor(ledPins, rON); //game is over, turn the led red
 
- 
- while (digitalRead(BUTTON_PIN) == LOW) {
-   //waits for the user to press the reset button to reset the game
-   }
-   
+
+  while (digitalRead(BUTTON_PIN) == LOW) {
+    //waits for the user to press the reset button to reset the game
+  }
+
 
 }
 
@@ -684,25 +756,25 @@ boolean isFreeFalling() {
   // NOTE: pow(_Acc,2) may cause int overflow! If weird numbers start coming out, try the following:
   /*
   long xAcc = (long) aa.x;
-  long yAcc = (long) aa.y;
-  long zAcc = (long) aa.z;
-  int a = (int) sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2));
-  */
+   long yAcc = (long) aa.y;
+   long zAcc = (long) aa.z;
+   int a = (int) sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2));
+   */
 
   return (a < 1000) ? true : false; //the 1000 here is essentially arbitrary
   /*
   // If the ball is spinning and the MPU is not at the ball's center of mass (COM), the MPU will experience (and report) an extra
-  // centripetal acceleration. This needs to be removed to get the proper acceleration of the ball's COM for proper freefall detection.
-  int rotVal = getRotationSpeed() / 500; //this 500 is arbitrary but important to fine-tune
-  int centripetalOffset = pow(rotVal, 2)*distFromCOM;
-  int aCOM = a - centripetalOffset;
-  return (aCOM < 1000) ? true : false;
-  */
+   // centripetal acceleration. This needs to be removed to get the proper acceleration of the ball's COM for proper freefall detection.
+   int rotVal = getRotationSpeed() / 500; //this 500 is arbitrary but important to fine-tune
+   int centripetalOffset = pow(rotVal, 2)*distFromCOM;
+   int aCOM = a - centripetalOffset;
+   return (aCOM < 1000) ? true : false;
+   */
 }
 
 void changeModeLight(int mode) {
   int col = mode%6; //loop back around if mode > 5
-  
+
   Serial.println(col);
   setColor(ledPins, COLORS[col]);
 }
@@ -719,15 +791,15 @@ void changeModeLight(int mode) {
  * TODO: maybe have it accept a light output function as a parameter?
  */
 void lightCycle() {
-  
+
   // Detecting the start of a throw
   if (isFreeFalling() && !freeFalling) { 
     freeFalling = true;
     throwStartTime = millis();  // millis() is the current time since program start in milliseconds
     Serial.println("Free fall started!"); // for debugging purposes
     Serial1.println("Free fall started!"); // for wireless debugging purposes
-   }
-  
+  }
+
   // Updating the lights mid-throw
   if (isFreeFalling() && freeFalling) {
     int airTime = millis() - throwStartTime; // Time in milliseconds since leaving the hand
@@ -736,28 +808,31 @@ void lightCycle() {
     cycleProgress = (cycleProgress > 1) ? 1 : cycleProgress;
     // cycleProgress = 0 when it leaves the hand, then increases linearly until "lastThrowDuration" milliseconds after leaving the hand, where it stays at 1
     // Note: 0 <= cycleProgress <= 1
-    
+
     // === Linear Fading ====
     int cycleProgress255 = (int) (cycleProgress * 255);
     int red = 255 - cycleProgress255; // Starts at 255, linearly declines to 0
     int blue = cycleProgress255; // Starts at 0, linearly increases to 255
     draw(red, 0, blue);
-    
+
     // === Parabolic Fading ====
     // fadeRedBlueParabolically(cycleProgress, 0.6, 0.4);
   }  
-    
- // Detecting the end of a throw   
- // If it is no longer in free fall and we haven't set freeFalling back to false yet, set it to false, and set throwEndTime and lastThrowDuration.
- // Potential issue: is the minimum accel threshold for !isFreeFalling() too low? 
- // Do we need a isStronglyAccelerating() function with a higher minimum threshold instead of !isFreeFalling()?
+
+  // Detecting the end of a throw   
+  // If it is no longer in free fall and we haven't set freeFalling back to false yet, set it to false, and set throwEndTime and lastThrowDuration.
+  // Potential issue: is the minimum accel threshold for !isFreeFalling() too low? 
+  // Do we need a isStronglyAccelerating() function with a higher minimum threshold instead of !isFreeFalling()?
   if (freeFalling && !isFreeFalling()) {
-      freeFalling = false;
-      throwEndTime = millis();
-      lastThrowDuration = throwEndTime - throwStartTime;
-      Serial.println("Free fall stopped. Duration:"); // for debugging purposes
-      Serial.println(lastThrowDuration); // for debugging purposes
-      Serial1.println("Free fall stopped. Duration:"); // for wireless debugging purposes
-      Serial1.println(lastThrowDuration); // for wireless debugging purposes
-   }
+    freeFalling = false;
+    throwEndTime = millis();
+    lastThrowDuration = throwEndTime - throwStartTime;
+    Serial.println("Free fall stopped. Duration:"); // for debugging purposes
+    Serial.println(lastThrowDuration); // for debugging purposes
+    Serial1.println("Free fall stopped. Duration:"); // for wireless debugging purposes
+    Serial1.println(lastThrowDuration); // for wireless debugging purposes
+  }
 }
+
+
+
