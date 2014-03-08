@@ -297,7 +297,7 @@ void loop() {
     
     //read the z component of the gravity, and adjust the LED accordingly
     int valueZ = 128 + gravity.z * 127; //0-255
-    draw(255-valueZ, 255, valueZ); //fade red to blue
+    draw(255-valueZ, 0, valueZ); //fade red to blue
     
     int valueXY = ((int) sqrt(pow(255*gravity.x,2) + pow(255*gravity.y,2))); //0-255
     //draw(255-valueZ, 255 - valueXY, valueZ); //fade red to green to blue
