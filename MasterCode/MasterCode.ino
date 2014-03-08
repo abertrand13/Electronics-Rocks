@@ -131,6 +131,11 @@ void dmpDataReady() {
 // ===                      INITIAL SETUP                       ===
 // ================================================================
 
+// =====================
+// Number of loops
+// =====================
+int numLoops = 0;
+
 
 // =====================
 // Serial Variables
@@ -409,56 +414,21 @@ void loop() {
       break;
     case 4:
       {
-        // Receives information from computer
-        receiveStringFromComputer();
-
-        // Receives information from arduino
-        receiveCharFromArduino();
-
-        if (computerString.length() >= 7 && computerString[0] == 'C') {
-          int red;
-          int green;
-          int blue;
-          int counter = 0;
-          String current = "";
-          for (int i = 8; i < computerString.length(); i++) {
-            if (computerString[i] != ' ') {
-              current += computerString[i];
-            } 
-            else {
-              switch(counter) {
-              case 0:
-                red = current.toInt();
-                counter++;
-                current = "";
-                break;
-              case 1:
-                green = current.toInt();
-                counter++;
-                current = "";
-                break;
-              case 2:
-                blue = current.toInt();
-                current = "";
-                break;
-              }
-            }
-          }
-          /*
-          Serial.print("Found colors: ");
-          Serial.print(red);
-          Serial.print(" ");
-          Serial.print(green);
-          Serial.print(" ");
-          Serial.println(blue);
-          */
-          draw(red, green, blue);
+        userLightInput();
+      }
+      break; 
+    case 5:
+      {
+        numLoops++;
+        if (numLoops % 100 == 0) {
+          Serial1.println("Getting Temperature");
+          receiveStringFromComputer();
+          int webTemp = computerString.toInt();
+          draw(webTemp, 0, 255 - webTemp);
         }
-
       }
       break;
-    }           
-
+    }
   }
 }
 
@@ -737,6 +707,58 @@ void fadeRedBlueParabolically(float val, float rStopVal = 1.0, float bStartVal =
   draw(r, 0, b); 
 }
 
+// ---------------------
+// Gets RGB values from the user via the Serial and alters
+// the light accordingly.
+// ----------------------
+void userLightInput() {
+  // Receives information from computer
+  receiveStringFromComputer();
+
+  // Receives information from arduino
+  receiveCharFromArduino();
+
+  if (computerString.length() >= 7 && computerString[0] == 'C') {
+    int red;
+    int green;
+    int blue;
+    int counter = 0;
+    String current = "";
+    for (int i = 8; i < computerString.length(); i++) {
+      if (computerString[i] != ' ') {
+        current += computerString[i];
+      } 
+      else {
+        switch(counter) {
+        case 0:
+          red = current.toInt();
+          counter++;
+          current = "";
+          break;
+        case 1:
+          green = current.toInt();
+          counter++;
+          current = "";
+          break;
+        case 2:
+          blue = current.toInt();
+          current = "";
+          break;
+        }
+      }
+    }
+    /*
+          Serial.print("Found colors: ");
+     Serial.print(red);
+     Serial.print(" ");
+     Serial.print(green);
+     Serial.print(" ");
+     Serial.println(blue);
+     */
+    draw(red, green, blue);
+  }
+}
+
 //=====Hot Potato Feature=======
 
 void hotPotato() {
@@ -746,11 +768,11 @@ void hotPotato() {
   int t_off; //time that the led should be off (per blink). this will change over the course of the loop
 
   int rON[] = {
-    255,0,0                      }; //lights red LED
+    255,0,0                          }; //lights red LED
   int bON[] = {
-    0,0,255                      }; //lights blue LED
+    0,0,255                          }; //lights blue LED
   int OFF[] = {
-    0,0,0                      };   
+    0,0,0                          };   
 
   int duration = random(10000,30000); //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
   int t_lastSwitch = 0;
@@ -907,6 +929,8 @@ void lightCycle() {
     Serial1.println(lastThrowDuration); // for wireless debugging purposes
   }
 }
+
+
 
 
 
