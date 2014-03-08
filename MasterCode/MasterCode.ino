@@ -386,7 +386,7 @@ void loop() {
     }
 
     // ============================
-    //  MODE SWITCH
+    //  MODE SWITCH STATEMENT
     // ============================
     switch(mode) {
     case 0:
@@ -422,346 +422,6 @@ void loop() {
     }
   }
 }
-
-
-// =======================================================================================================================
-// =======================================================================================================================
-// =============================                    HELPER METHODS                    ====================================
-// =======================================================================================================================
-// =======================================================================================================================
-
-// ====================
-// MODE SELECTION
-// ====================
-/*
-  Code to change the mode. The mode should change when the button is clicked.
- The light should also change to reflect that change.
- */
-void enterModeSelection() {
-  Serial.println("Button Stage");
-  Serial1.print("Enter Mode: 0 - ");
-  Serial1.println(NUMBER_OF_MODES); 
-
-
-  // Convert NUMBER_OF_MODES to a string so that can access characters
-  String numModesString = String(NUMBER_OF_MODES);
-
-  boolean buttonClicked = false;
-  int modeSelectionStartTime = millis();
-  changeModeLight(mode); //lights up the leds
-
-  while (true) {
-    // Receives information from computer
-    receiveStringFromComputer();
-    // Receives information from arduino
-    receiveCharFromArduino();
-
-    if (computerString.length() == 1 && computerString[0] >= '0' && computerString[0] <= numModesString[0]) {
-      mode = computerString[0] - '0';
-      Serial.print("Key pressed: Mode ");
-      Serial.println(mode); 
-      changeModeLight(mode);
-      break;
-    }
-
-    if (!buttonClicked && digitalRead(BUTTON_PIN) == LOW) {
-      buttonClicked = true;
-      mode = (mode + 1) % NUMBER_OF_MODES;
-      changeModeLight(mode);
-      modeSelectionStartTime = millis();
-      Serial.print("Button pressed: Mode ");
-      Serial.println(mode); 
-    }
-
-    if (buttonClicked && digitalRead(BUTTON_PIN) == HIGH) {
-      buttonClicked = false;
-      Serial.println("Button released");
-    }
-
-    int timeWaited = millis() - modeSelectionStartTime;
-    if (timeWaited > MODE_SELECTION_WAIT) break;
-  }
-
-  blinkLight(125);
-  blinkLight(125);
-  blinkLight(125);
-  delay(250);
-
-  Serial.print("End Button Stage, Mode Selected: ");
-  Serial.println(mode);
-
-  Serial1.print("Mode Selected: ");
-  Serial1.println(mode);
-}
-
-// =====================
-// SERIAL HELPER METHODS
-// =====================
-
-/**
- * Receive a character from the computer.
- */
-void receiveStringFromComputer() {
-  if (Serial1.available()) {
-    computerString = "";
-    while (true) {
-      if (Serial1.available()) {
-        char computerChar = (char) Serial1.read();
-        if (computerChar == '\n') {
-          Serial.println(computerString);
-          break;
-        }
-        computerString += computerChar;
-      }
-    }
-  }
-}
-
-/**
- * Receive a character from the Arduino.
- */
-void receiveCharFromArduino() {
-  if (Serial.available()) {
-    char arduinoChar = (char) Serial.read();
-    arduinoString += arduinoChar;
-    Serial1.print(arduinoChar);
-  }
-}
-
-boolean checkForEscape() {
-  if (computerString.length() == 1 && computerString[0] == 'r') {
-    blinkLight(125);
-    blinkLight(125);
-    blinkLight(125);
-    delay(250);
-    return true;
-  }
-  return false;
-}
-
-// ====================
-// LIGHT HELPER METHODS
-// ====================
-
-void blinkLight(int pause) {
-  lightOff();
-  delay(pause);
-  lightOn();
-  delay(pause);
-  lightOff();
-}
-
-void lightOff() {
-  setColor(ledPins, BLACK);
-}
-
-void lightOn() {
-  setColor(ledPins, currentColor);
-}
-
-// Returns the pythagorean sum of the x-, y-, and z-rotation values
-// Comment: How accurate is this? Can rotation speed components be added like vectors?
-int getRotationSpeed() {
-  int xRot = abs(mpu.getRotationX());
-  int yRot = abs(mpu.getRotationY());
-  int zRot = abs(mpu.getRotationZ());
-
-  // If this goes wacko, it's int overflow - change the ints to longs and cast it back at the end.
-  return sqrt(pow(xRot,2) + pow(yRot,2) + pow(zRot,2));
-}
-
-// Normalizes getRotationSpeed() to never be more than 255
-int getRotationSpeed255() { 
-  int maxRot = getRotationSpeed();
-  int rotVal = maxRot * (255/8000.0);
-  rotVal = (rotVal > 255) ? 255 : rotVal; //normalize it to never be more than 255
-  return rotVal;
-}
-// Fade from red to blue based on rotation speed
-void fadeRedBlueRotation(){
-  int rotVal = getRotationSpeed255();
-  draw(rotVal, 0, 255 - rotVal); // R-B
-  //fadeRedBlueGreen(rotVal); // R-B-G 
-}
-
-// Fade from red to blue to green based on rotational speed
-// Doesn't work all that well, the colors don't fade very evenly so it flickers a lot
-void fadeRBGRotation(){
-  int rotVal = getRotationSpeed255();
-  fadeRedBlueGreen(rotVal); // R-B-G 
-}
-
-//fade from red to blue based on z component of gravity
-void fadeRedBlueGravity(){
-  //read the z component of the gravity, and adjust the LED accordingly
-  mpu.dmpGetQuaternion(&q, fifoBuffer);
-  mpu.dmpGetGravity(&gravity, &q);
-  Serial.print(gravity.x);
-  Serial.print("\t");
-  Serial.print(gravity.y);
-  Serial.print("\t");
-  Serial.println(gravity.z);
-  int valueZ = 128 + gravity.z * 127; //0-255
-  draw(255 - valueZ, 0, valueZ); //fade red to blue */
-  //Serial.println(valueZ);
-
-}
-
-void draw(int r, int g, int b) {
-  //sets LED color based on RGB values
-  analogWrite(color('r'), 255 - r);
-  analogWrite(color('g'), 255 - g);
-  analogWrite(color('b'), 255 - b);
-}
-
-int color(char color) {
-  //returns pins for each color according to ledPins (defined up top)
-  switch(color) {
-  case 'r':
-    return ledPins[0];
-    break;
-
-  case 'g':
-    return ledPins[1];
-    break;
-
-  case 'b':
-    return ledPins[2];
-    break;
-  }  
-}
-
-void fadeRedBlueGreen(int val){
-  int r = (val*2 - 255 > 0) ? (val*2 - 255) : 0;
-  int b = (128 - val) *2;
-  int g = ((((255 - val) * 2) - 255) > 0) ? ((255 - val) * 2 - 255) : 0;
-  draw(r, g, b); 
-}
-
-/*
- * Precondition: 0 <= val, rStopVal, bStartVal <= 1
- * Fades from red to blue in a nice, nonlinear way.
- * By default (if only passed one argument, val), it's a  changing shade of purple the whole time.
- * To have red be completely turned off before the throw's end (so it's just blue of increasing brightness), input rStopVal such that 0.5 <= rStopVal < 1.
- * Likewise, to have blue only start coming on partway in, input bStartVal such that 0.0 < bStartVal <= 0.5.
- */
-void fadeRedBlueParabolically(float val, float rStopVal = 1.0, float bStartVal = 0.0) {
-  // Following coordinates in comments are in (time, brightness value) format
-  int r = 255 * (1 - pow(val/rStopVal, 2)); // Given by parabola with vertex at (0, 255) and x-intercept (rStopVal, 0)
-  int b = 255 * (1 - pow((val-1)/bStartVal, 2)); // Given by parabola with x-intercept at (bStartVal, 0) and vertex at (1, 255);
-  // We're guaranteed r, b <= 1 because 0<=val<=1; however, we still need to make sure r, b >= 0.
-  r = (r < 0) ? 0 : r;
-  b = (b < 0) ? 0 : b;
-
-  draw(r, 0, b); 
-}
-
-// ---------------------
-// Gets RGB values from the user via the Serial and alters
-// the light accordingly.
-// ----------------------
-void userLightInput() {
-  // Receives information from computer
-  receiveStringFromComputer();
-
-  // Receives information from arduino
-  receiveCharFromArduino();
-
-  if (computerString.length() >= 7 && computerString[0] == 'C') {
-    int red;
-    int green;
-    int blue;
-    int counter = 0;
-    String current = "";
-    for (int i = 8; i < computerString.length(); i++) {
-      if (computerString[i] != ' ') {
-        current += computerString[i];
-      } 
-      else {
-        switch(counter) {
-        case 0:
-          red = current.toInt();
-          counter++;
-          current = "";
-          break;
-        case 1:
-          green = current.toInt();
-          counter++;
-          current = "";
-          break;
-        case 2:
-          blue = current.toInt();
-          current = "";
-          break;
-        }
-      }
-    }
-    /*
-          Serial.print("Found colors: ");
-     Serial.print(red);
-     Serial.print(" ");
-     Serial.print(green);
-     Serial.print(" ");
-     Serial.println(blue);
-     */
-    draw(red, green, blue);
-  }
-}
-
-void setColor(int* led, int* color){
-  for(int i = 0; i < 3; i++){
-    analogWrite(led[i], 255-color[i]); //note: a low output turns the led on
-  }
-}
-
-
-// =======================
-// IS FREE FALLING
-// =======================
-// one possible test to see whether the ball is in free fall. Assumes the MPU 6050 has 
-// already been properly initialized and that "VectorInt16 aa;" has been declared
-boolean isFreeFalling() {
-  mpu.dmpGetQuaternion(&q, fifoBuffer);
-  mpu.dmpGetAccel(&aa, fifoBuffer);
-  mpu.dmpGetGravity(&gravity, &q);
-  mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-  int xAcc = aa.x;
-  int yAcc = aa.y;
-  int zAcc = aa.z;
-
-  int a = sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2)); //magnitude of the acceleration
-  // NOTE: pow(_Acc,2) may cause int overflow! If weird numbers start coming out, try the following:
-  /*
-  long xAcc = (long) aa.x;
-   long yAcc = (long) aa.y;
-   long zAcc = (long) aa.z;
-   int a = (int) sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2));
-   */
-
-  return (a < 1000) ? true : false; //the 1000 here is essentially arbitrary
-  /*
-  // If the ball is spinning and the MPU is not at the ball's center of mass (COM), the MPU will experience (and report) an extra
-   // centripetal acceleration. This needs to be removed to get the proper acceleration of the ball's COM for proper freefall detection.
-   int rotVal = getRotationSpeed() / 500; //this 500 is arbitrary but important to fine-tune
-   int centripetalOffset = pow(rotVal, 2)*distFromCOM;
-   int aCOM = a - centripetalOffset;
-   return (aCOM < 1000) ? true : false;
-   */
-}
-
-// ======================
-// CHANGE MDOE LIGHT
-// ======================
-/* 
- * Changes the light depending on the mode.
- */
-void changeModeLight(int mode) {
-  int col = mode % 6; //loop back around if mode > 5
-
-  currentColor = COLORS[col];
-  setColor(ledPins, currentColor);
-}
-
 
 // =======================================================================================================================
 // =======================================================================================================================
@@ -967,5 +627,361 @@ void showWebTemperature() {
     int webTemp = computerString.toInt();
     draw(webTemp, 0, 255 - webTemp);
   }
+}
+
+// =======================================================================================================================
+// =======================================================================================================================
+// =============================                    HELPER METHODS                    ====================================
+// =======================================================================================================================
+// =======================================================================================================================
+
+// ====================
+// MODE SELECTION
+// ====================
+/*
+  Code to change the mode. The mode should change when the button is clicked.
+ The light should also change to reflect that change.
+ */
+void enterModeSelection() {
+  Serial.println("Button Stage");
+  Serial1.print("Enter Mode: 0 - ");
+  Serial1.println(NUMBER_OF_MODES); 
+
+
+  // Convert NUMBER_OF_MODES to a string so that can access characters
+  String numModesString = String(NUMBER_OF_MODES);
+
+  boolean buttonClicked = false;
+  int modeSelectionStartTime = millis();
+  changeModeLight(mode); //lights up the leds
+
+  while (true) {
+    // Receives information from computer
+    receiveStringFromComputer();
+    // Receives information from arduino
+    receiveCharFromArduino();
+
+    if (computerString.length() == 1 && computerString[0] >= '0' && computerString[0] <= numModesString[0]) {
+      mode = computerString[0] - '0';
+      Serial.print("Key pressed: Mode ");
+      Serial.println(mode); 
+      changeModeLight(mode);
+      break;
+    }
+
+    if (!buttonClicked && digitalRead(BUTTON_PIN) == LOW) {
+      buttonClicked = true;
+      mode = (mode + 1) % NUMBER_OF_MODES;
+      changeModeLight(mode);
+      modeSelectionStartTime = millis();
+      Serial.print("Button pressed: Mode ");
+      Serial.println(mode); 
+    }
+
+    if (buttonClicked && digitalRead(BUTTON_PIN) == HIGH) {
+      buttonClicked = false;
+      Serial.println("Button released");
+    }
+
+    int timeWaited = millis() - modeSelectionStartTime;
+    if (timeWaited > MODE_SELECTION_WAIT) break;
+  }
+
+  blinkLight(125);
+  blinkLight(125);
+  blinkLight(125);
+  delay(250);
+
+  Serial.print("End Button Stage, Mode Selected: ");
+  Serial.println(mode);
+
+  Serial1.print("Mode Selected: ");
+  Serial1.println(mode);
+}
+
+// =======================================
+// NETWORKING HELPER METHODS
+// =======================================
+
+/**
+ * Receive a character from the computer.
+ */
+void receiveStringFromComputer() {
+  if (Serial1.available()) {
+    computerString = "";
+    while (true) {
+      if (Serial1.available()) {
+        char computerChar = (char) Serial1.read();
+        if (computerChar == '\n') {
+          Serial.println(computerString);
+          break;
+        }
+        computerString += computerChar;
+      }
+    }
+  }
+}
+
+/**
+ * Receive a character from the Arduino.
+ */
+void receiveCharFromArduino() {
+  if (Serial.available()) {
+    char arduinoChar = (char) Serial.read();
+    arduinoString += arduinoChar;
+    Serial1.print(arduinoChar);
+  }
+}
+
+/**
+ * Checks for the escape key from the computer.
+ */
+boolean checkForEscape() {
+  if (computerString.length() == 1 && computerString[0] == 'r') {
+    blinkLight(125);
+    blinkLight(125);
+    blinkLight(125);
+    delay(250);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Gets RGB values from the user via the Serial and alters
+ * the light accordingly.
+ */
+void userLightInput() {
+  // Receives information from computer
+  receiveStringFromComputer();
+
+  // Receives information from arduino
+  receiveCharFromArduino();
+
+  if (computerString.length() >= 7 && computerString[0] == 'C') {
+    int red;
+    int green;
+    int blue;
+    int counter = 0;
+    String current = "";
+    for (int i = 8; i < computerString.length(); i++) {
+      if (computerString[i] != ' ') {
+        current += computerString[i];
+      } 
+      else {
+        switch(counter) {
+        case 0:
+          red = current.toInt();
+          counter++;
+          current = "";
+          break;
+        case 1:
+          green = current.toInt();
+          counter++;
+          current = "";
+          break;
+        case 2:
+          blue = current.toInt();
+          current = "";
+          break;
+        }
+      }
+    }
+    
+    draw(red, green, blue);
+  }
+}
+
+
+// =======================================
+// LIGHT HELPER METHODS
+// =======================================
+
+/* 
+ * Changes the light depending on the mode.
+ */
+void changeModeLight(int mode) {
+  int col = mode % 6; //loop back around if mode > 5
+
+  currentColor = COLORS[col];
+  setColor(ledPins, currentColor);
+}
+
+/**
+ * Blinks the light between on and off.
+ */
+void blinkLight(int pause) {
+  lightOff();
+  delay(pause);
+  lightOn();
+  delay(pause);
+  lightOff();
+}
+
+/**
+ * Turns the light off.
+ */
+void lightOff() {
+  setColor(ledPins, BLACK);
+}
+
+/**
+ * Turns the light on.
+ */
+void lightOn() {
+  setColor(ledPins, currentColor);
+}
+
+/**
+ * Sets LED color based on RGB values.
+ */
+void draw(int r, int g, int b) {
+  analogWrite(color('r'), 255 - r);
+  analogWrite(color('g'), 255 - g);
+  analogWrite(color('b'), 255 - b);
+}
+
+/**
+ * returns pins for each color according to ledPins (defined up top)
+ */
+int color(char color) {
+  switch(color) {
+  case 'r':
+    return ledPins[0];
+    break;
+
+  case 'g':
+    return ledPins[1];
+    break;
+
+  case 'b':
+    return ledPins[2];
+    break;
+  }  
+}
+
+/**
+ * Sets the color using an int array.
+ */
+void setColor(int* led, int* color){
+  for(int i = 0; i < 3; i++){
+    analogWrite(led[i], 255-color[i]); //note: a low output turns the led on
+  }
+}
+
+
+// =======================================
+// SENSOR INPUT HELPER METHODS
+// =======================================
+
+/*
+ * Returns the pythagorean sum of the x-, y-, and z-rotation values
+ * Comment: How accurate is this? Can rotation speed components be added like vectors?
+ */
+int getRotationSpeed() {
+  int xRot = abs(mpu.getRotationX());
+  int yRot = abs(mpu.getRotationY());
+  int zRot = abs(mpu.getRotationZ());
+
+  // If this goes wacko, it's int overflow - change the ints to longs and cast it back at the end.
+  return sqrt(pow(xRot,2) + pow(yRot,2) + pow(zRot,2));
+}
+
+// Normalizes getRotationSpeed() to never be more than 255
+int getRotationSpeed255() { 
+  int maxRot = getRotationSpeed();
+  int rotVal = maxRot * (255/8000.0);
+  rotVal = (rotVal > 255) ? 255 : rotVal; //normalize it to never be more than 255
+  return rotVal;
+}
+
+// Fade from red to blue based on rotation speed
+void fadeRedBlueRotation(){
+  int rotVal = getRotationSpeed255();
+  draw(rotVal, 0, 255 - rotVal); // R-B
+  //fadeRedBlueGreen(rotVal); // R-B-G 
+}
+
+// Fade from red to blue to green based on rotational speed
+// Doesn't work all that well, the colors don't fade very evenly so it flickers a lot
+void fadeRBGRotation(){
+  int rotVal = getRotationSpeed255();
+  fadeRedBlueGreen(rotVal); // R-B-G 
+}
+
+//fade from red to blue based on z component of gravity
+void fadeRedBlueGravity(){
+  //read the z component of the gravity, and adjust the LED accordingly
+  mpu.dmpGetQuaternion(&q, fifoBuffer);
+  mpu.dmpGetGravity(&gravity, &q);
+  Serial.print(gravity.x);
+  Serial.print("\t");
+  Serial.print(gravity.y);
+  Serial.print("\t");
+  Serial.println(gravity.z);
+  int valueZ = 128 + gravity.z * 127; //0-255
+  draw(255 - valueZ, 0, valueZ); //fade red to blue */
+  //Serial.println(valueZ);
+
+}
+
+void fadeRedBlueGreen(int val){
+  int r = (val*2 - 255 > 0) ? (val*2 - 255) : 0;
+  int b = (128 - val) *2;
+  int g = ((((255 - val) * 2) - 255) > 0) ? ((255 - val) * 2 - 255) : 0;
+  draw(r, g, b); 
+}
+
+/*
+ * Precondition: 0 <= val, rStopVal, bStartVal <= 1
+ * Fades from red to blue in a nice, nonlinear way.
+ * By default (if only passed one argument, val), it's a  changing shade of purple the whole time.
+ * To have red be completely turned off before the throw's end (so it's just blue of increasing brightness), input rStopVal such that 0.5 <= rStopVal < 1.
+ * Likewise, to have blue only start coming on partway in, input bStartVal such that 0.0 < bStartVal <= 0.5.
+ */
+void fadeRedBlueParabolically(float val, float rStopVal = 1.0, float bStartVal = 0.0) {
+  // Following coordinates in comments are in (time, brightness value) format
+  int r = 255 * (1 - pow(val/rStopVal, 2)); // Given by parabola with vertex at (0, 255) and x-intercept (rStopVal, 0)
+  int b = 255 * (1 - pow((val-1)/bStartVal, 2)); // Given by parabola with x-intercept at (bStartVal, 0) and vertex at (1, 255);
+  // We're guaranteed r, b <= 1 because 0<=val<=1; however, we still need to make sure r, b >= 0.
+  r = (r < 0) ? 0 : r;
+  b = (b < 0) ? 0 : b;
+
+  draw(r, 0, b); 
+}
+
+
+// =======================
+// IS FREE FALLING
+// =======================
+// one possible test to see whether the ball is in free fall. Assumes the MPU 6050 has 
+// already been properly initialized and that "VectorInt16 aa;" has been declared
+boolean isFreeFalling() {
+  mpu.dmpGetQuaternion(&q, fifoBuffer);
+  mpu.dmpGetAccel(&aa, fifoBuffer);
+  mpu.dmpGetGravity(&gravity, &q);
+  mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
+  int xAcc = aa.x;
+  int yAcc = aa.y;
+  int zAcc = aa.z;
+
+  int a = sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2)); //magnitude of the acceleration
+  // NOTE: pow(_Acc,2) may cause int overflow! If weird numbers start coming out, try the following:
+  /*
+  long xAcc = (long) aa.x;
+   long yAcc = (long) aa.y;
+   long zAcc = (long) aa.z;
+   int a = (int) sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2));
+   */
+
+  return (a < 1000) ? true : false; //the 1000 here is essentially arbitrary
+  /*
+  // If the ball is spinning and the MPU is not at the ball's center of mass (COM), the MPU will experience (and report) an extra
+   // centripetal acceleration. This needs to be removed to get the proper acceleration of the ball's COM for proper freefall detection.
+   int rotVal = getRotationSpeed() / 500; //this 500 is arbitrary but important to fine-tune
+   int centripetalOffset = pow(rotVal, 2)*distFromCOM;
+   int aCOM = a - centripetalOffset;
+   return (aCOM < 1000) ? true : false;
+   */
 }
 
