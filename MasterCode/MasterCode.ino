@@ -776,7 +776,8 @@ void changeModeLight(int mode) {
   int col = mode%6; //loop back around if mode > 5
 
   Serial.println(col);
-  setColor(ledPins, COLORS[col]);
+  currentColor = COLORS[col];
+  setColor(ledPins, currentColor);
 }
 
 
