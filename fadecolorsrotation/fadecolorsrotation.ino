@@ -349,8 +349,7 @@ void fadeRedBlueAcceleration(){
   int xAccel = aaReal.x;
   int yAccel = aaReal.y;
   int zAccel = aaReal.z;
-  int maxAccelXY = (xAccel > yAccel) ? xAccel : yAccel;
-  int maxAccel = (maxAccelXY > zAccel) ? maxAccelXY : zAccel;
+  int maxAccel = sqrt(pow(xAccel,2) + pow(yAccel,2) + pow(zAccel,2));
   
   
   // Calculating stats (just for testing, don't worry about it)
@@ -370,7 +369,7 @@ void fadeRedBlueAcceleration(){
   Serial.print("\t");
   Serial.print(zAccel); 
   Serial.print("\t");
-  Serial.print(maxAccel);
+  Serial.println(maxAccel);
   
   
   // Red to Blue based on acceleration
@@ -378,8 +377,8 @@ void fadeRedBlueAcceleration(){
   if (accelVal < 0){
     accelVal = 0;
   }
-  Serial.print("\t");
-  Serial.println(accelVal);
+  //Serial.print("\t");
+  //Serial.println(accelVal);
   accelVal = (accelVal > 255) ? 255 : accelVal;
   draw(accelVal, 0, 255 - accelVal); // red to blue
 }
