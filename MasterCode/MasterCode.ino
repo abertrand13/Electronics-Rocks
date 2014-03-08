@@ -135,14 +135,18 @@ void dmpDataReady() {
 // =====================
 // Serial Variables
 // =====================
-char computerChar;
-char arduinoChar;
+String computerString;
+String arduinoString;
 
 // =====================
 // Light Variables
 // =====================
 int ledPins[] = {
   9, 10, 11};
+
+int redPin = 11;
+int greenPin = 10;
+int bluePin = 9;
 
 // ==========================
 // LightCycle Mode Variables
@@ -208,10 +212,12 @@ void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
 
+  while(!Serial);
+
   // ====================
   // HARDWARE SETUP
   // ====================
-  
+
   /*
   Set up LEDs
    */
@@ -367,33 +373,88 @@ void loop() {
     //THIS IS WHERE YOU SHOULD DO STUFF
 
     // Receives information from computer
-    receiveCharFromComputer();
+    receiveStringFromComputer();
 
     // Receives information from arduino
     receiveCharFromArduino();
 
-    checkForEscape();
-
+    if (checkForEscape()) {
+      enterModeSelection();
+    }
 
     switch(mode) {
     case 0:
-      Serial.println("Running red blue acceleration");
-      fadeRedBlueAcceleration();
-      Serial.println("End red blue acceleration");
+      {
+        Serial.println("Running red blue acceleration");
+        fadeRedBlueAcceleration();
+        Serial.println("End red blue acceleration");
+      }
       break;
     case 1:
-      Serial.println("Running hot potato");
-      hotPotato();
-      Serial.println("End hot potato");
+      {
+        Serial.println("Running hot potato");
+        hotPotato();
+        Serial.println("End hot potato");
+      }
       break;
     case 2:
       lightCycle();
       break;
     case 3:
-      Serial.println("Running temperature");
-      while (true) { 
+      {
+        Serial.println("Running temperature");
         double temp = ((double)mpu.getTemperature() + 12412.0) / 340.0;
         Serial.println(temp);
+      }
+      break;
+    case 4:
+      {
+        // Receives information from computer
+        receiveStringFromComputer();
+
+        // Receives information from arduino
+        receiveCharFromArduino();
+
+        if (computerString.length() >= 7 && computerString[0] == 'C') {
+          int red;
+          int green;
+          int blue;
+          int counter = 0;
+          String current = "";
+          for (int i = 8; i < computerString.length(); i++) {
+            if (computerString[i] != ' ') {
+              current += computerString[i];
+            } 
+            else {
+              switch(counter) {
+              case 0:
+                red = current.toInt();
+                counter++;
+                current = "";
+                break;
+              case 1:
+                green = current.toInt();
+                counter++;
+                current = "";
+                break;
+              case 2:
+                blue = current.toInt();
+                current = "";
+                break;
+              }
+            }
+          }
+          /*
+          Serial.print("Found colors: ");
+          Serial.print(red);
+          Serial.print(" ");
+          Serial.print(green);
+          Serial.print(" ");
+          Serial.println(blue);
+          */
+          draw(red, green, blue);
+        }
+
       }
       break;
     }           
@@ -402,6 +463,10 @@ void loop() {
 }
 
 
+// =======================================================================================================================
+//                             HELPER METHODS                  
+// =======================================================================================================================
+
 // =====================
 // SERIAL HELPER METHODS
 // =====================
@@ -409,10 +474,19 @@ void loop() {
 /**
  * Receive a character from the computer.
  */
-void receiveCharFromComputer() {
+void receiveStringFromComputer() {
   if (Serial1.available()) {
-    computerChar = (char) Serial1.read();
-    Serial.print(computerChar);
+    computerString = "";
+    while (true) {
+      if (Serial1.available()) {
+        char computerChar = (char) Serial1.read();
+        if (computerChar == '\n') {
+          //Serial.println(computerString);
+          break;
+        }
+        computerString += computerChar;
+      }
+    }
   }
 }
 
@@ -421,20 +495,21 @@ void receiveCharFromComputer() {
  */
 void receiveCharFromArduino() {
   if (Serial.available()) {
-    arduinoChar = (char) Serial.read();
+    char arduinoChar = (char) Serial.read();
+    arduinoString += arduinoChar;
     Serial1.print(arduinoChar);
   }
 }
 
-void checkForEscape() {
-  if (computerChar == 'r') {
-      computerChar = 'A';
-      blinkLight(125);
-      blinkLight(125);
-      blinkLight(125);
-      delay(250);
-      enterModeSelection();
-    }
+boolean checkForEscape() {
+  if (computerString.length() == 1 && computerString[0] == 'r') {
+    blinkLight(125);
+    blinkLight(125);
+    blinkLight(125);
+    delay(250);
+    return true;
+  }
+  return false;
 }
 
 // ====================
@@ -459,15 +534,15 @@ void enterModeSelection() {
 
   while (true) {
     // Receives information from computer
-    receiveCharFromComputer();
-
+    receiveStringFromComputer();
     // Receives information from arduino
     receiveCharFromArduino();
 
-    if (computerChar >= '0' && computerChar <= numModesString[0]) {
-      mode = computerChar - '0';
+    if (computerString.length() == 1 && computerString[0] >= '0' && computerString[0] <= numModesString[0]) {
+      mode = computerString[0] - '0';
+      Serial.print("Key pressed: Mode ");
+      Serial.println(mode); 
       changeModeLight(mode);
-      computerChar = 'A';
       break;
     }
 
@@ -496,7 +571,7 @@ void enterModeSelection() {
 
   Serial.print("End Button Stage, Mode Selected: ");
   Serial.println(mode);
-  
+
   Serial1.print("Mode Selected: ");
   Serial1.println(mode);
 }
@@ -671,11 +746,11 @@ void hotPotato() {
   int t_off; //time that the led should be off (per blink). this will change over the course of the loop
 
   int rON[] = {
-    255,0,0          }; //lights red LED
+    255,0,0                      }; //lights red LED
   int bON[] = {
-    0,0,255          }; //lights blue LED
+    0,0,255                      }; //lights blue LED
   int OFF[] = {
-    0,0,0          };   
+    0,0,0                      };   
 
   int duration = random(10000,30000); //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
   int t_lastSwitch = 0;
@@ -687,14 +762,14 @@ void hotPotato() {
   setColor(ledPins, bON);
 
   while (t < duration) {
-    
+
     // Receives information from computer
-    receiveCharFromComputer();
+    receiveStringFromComputer();
 
     // Receives information from arduino
     receiveCharFromArduino();
-    
-    checkForEscape();
+
+    if (checkForEscape()) break;
 
     //these if statements blink the blue led
     if (isOn){
@@ -725,13 +800,6 @@ void hotPotato() {
   }
 
   setColor(ledPins, rON); //game is over, turn the led red
-
-
-  while (digitalRead(BUTTON_PIN) == LOW) {
-    //waits for the user to press the reset button to reset the game
-  }
-
-
 }
 
 //for common anode led
@@ -739,6 +807,12 @@ void setColor(int* led, int* color){
   for(int i = 0; i < 3; i++){
     analogWrite(led[i], 255-color[i]); //note: a low output turns the led on
   }
+}
+
+void setColor(int red, int green, int blue) {
+  analogWrite(redPin, red);
+  analogWrite(greenPin, green);
+  analogWrite(bluePin, blue);  
 }
 
 // one possible test to see whether the ball is in free fall. Assumes the MPU 6050 has 
@@ -775,7 +849,6 @@ boolean isFreeFalling() {
 void changeModeLight(int mode) {
   int col = mode%6; //loop back around if mode > 5
 
-  Serial.println(col);
   currentColor = COLORS[col];
   setColor(ledPins, currentColor);
 }
@@ -834,6 +907,12 @@ void lightCycle() {
     Serial1.println(lastThrowDuration); // for wireless debugging purposes
   }
 }
+
+
+
+
+
+
 
 
 
