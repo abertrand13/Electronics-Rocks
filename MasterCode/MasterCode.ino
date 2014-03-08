@@ -110,10 +110,6 @@ VectorFloat gravity;    // [x, y, z]            gravity vector
 float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
-// packet structure for InvenSense teapot demo
-uint8_t teapotPacket[14] = { 
-  '$', 0x02, 0,0, 0,0, 0,0, 0,0, 0x00, 0x00, '\r', '\n' };
-
 
 
 // ================================================================
@@ -135,7 +131,6 @@ void dmpDataReady() {
 // Number of loops
 // =====================
 int numLoops = 0;
-
 
 // =====================
 // Serial Variables
@@ -185,9 +180,10 @@ int NUMBER_OF_MODES = 8;
 // Amount of time to wait to advance from mode selection
 int MODE_SELECTION_WAIT = 7000;
 
-/*
-Predefined colors
- */
+// ====================================
+// Color Variables
+// ====================================
+// Predefined Colors
 int RED[] = {
   255, 0, 0};    
 int GREEN[] = {
@@ -205,10 +201,12 @@ int WHITE[] = {
 int BLACK[] = {
   0, 0, 0}; 
 
+// Current color
 int* currentColor = WHITE;
 
+// Array of colors
 int* COLORS[] = {
-  RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA    }; 
+  RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA}; 
 
 void setup() {
   // ====================
@@ -217,6 +215,7 @@ void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
 
+  // Useful for debugging. Remove for final product
   while(!Serial);
 
   // ====================
@@ -322,7 +321,9 @@ double avgAccel = 0;
 double accelValues = 0;
 
 // =======================================================================================================================
-//                             MAIN PROGRAM LOOP                    
+// =======================================================================================================================
+// ==========================                    MAIN PROGRAM LOOP                    ====================================
+// =======================================================================================================================
 // =======================================================================================================================
 
 void loop() {
@@ -373,10 +374,7 @@ void loop() {
     blinkState = !blinkState;
     digitalWrite(LED_PIN, blinkState);
 
-    //main output
-
     //THIS IS WHERE YOU SHOULD DO STUFF
-
     // Receives information from computer
     receiveStringFromComputer();
 
@@ -387,29 +385,28 @@ void loop() {
       enterModeSelection();
     }
 
+    // ============================
+    //  MODE SWITCH
+    // ============================
     switch(mode) {
     case 0:
       {
-        Serial.println("Running red blue acceleration");
         fadeRedBlueAcceleration();
-        Serial.println("End red blue acceleration");
       }
       break;
     case 1:
       {
-        Serial.println("Running hot potato");
         hotPotato();
-        Serial.println("End hot potato");
       }
       break;
     case 2:
-      lightCycle();
+      {
+        lightCycle();
+      }
       break;
     case 3:
       {
-        Serial.println("Running temperature");
-        double temp = ((double)mpu.getTemperature() + 12412.0) / 340.0;
-        Serial.println(temp);
+        showSensorTemperature();
       }
       break;
     case 4:
@@ -419,13 +416,7 @@ void loop() {
       break; 
     case 5:
       {
-        numLoops++;
-        if (numLoops % 100 == 0) {
-          Serial1.println("Getting Temperature");
-          receiveStringFromComputer();
-          int webTemp = computerString.toInt();
-          draw(webTemp, 0, 255 - webTemp);
-        }
+        showWebTemperature();
       }
       break;
     }
@@ -434,53 +425,10 @@ void loop() {
 
 
 // =======================================================================================================================
-//                             HELPER METHODS                  
 // =======================================================================================================================
-
-// =====================
-// SERIAL HELPER METHODS
-// =====================
-
-/**
- * Receive a character from the computer.
- */
-void receiveStringFromComputer() {
-  if (Serial1.available()) {
-    computerString = "";
-    while (true) {
-      if (Serial1.available()) {
-        char computerChar = (char) Serial1.read();
-        if (computerChar == '\n') {
-          //Serial.println(computerString);
-          break;
-        }
-        computerString += computerChar;
-      }
-    }
-  }
-}
-
-/**
- * Receive a character from the Arduino.
- */
-void receiveCharFromArduino() {
-  if (Serial.available()) {
-    char arduinoChar = (char) Serial.read();
-    arduinoString += arduinoChar;
-    Serial1.print(arduinoChar);
-  }
-}
-
-boolean checkForEscape() {
-  if (computerString.length() == 1 && computerString[0] == 'r') {
-    blinkLight(125);
-    blinkLight(125);
-    blinkLight(125);
-    delay(250);
-    return true;
-  }
-  return false;
-}
+// =============================                    HELPER METHODS                    ====================================
+// =======================================================================================================================
+// =======================================================================================================================
 
 // ====================
 // MODE SELECTION
@@ -544,6 +492,51 @@ void enterModeSelection() {
 
   Serial1.print("Mode Selected: ");
   Serial1.println(mode);
+}
+
+// =====================
+// SERIAL HELPER METHODS
+// =====================
+
+/**
+ * Receive a character from the computer.
+ */
+void receiveStringFromComputer() {
+  if (Serial1.available()) {
+    computerString = "";
+    while (true) {
+      if (Serial1.available()) {
+        char computerChar = (char) Serial1.read();
+        if (computerChar == '\n') {
+          Serial.println(computerString);
+          break;
+        }
+        computerString += computerChar;
+      }
+    }
+  }
+}
+
+/**
+ * Receive a character from the Arduino.
+ */
+void receiveCharFromArduino() {
+  if (Serial.available()) {
+    char arduinoChar = (char) Serial.read();
+    arduinoString += arduinoChar;
+    Serial1.print(arduinoChar);
+  }
+}
+
+boolean checkForEscape() {
+  if (computerString.length() == 1 && computerString[0] == 'r') {
+    blinkLight(125);
+    blinkLight(125);
+    blinkLight(125);
+    delay(250);
+    return true;
+  }
+  return false;
 }
 
 // ====================
@@ -613,50 +606,6 @@ void fadeRedBlueGravity(){
   //Serial.println(valueZ);
 
 }
-
-//fades from red to blue based on acceleration (doesn't really work yet)
-void fadeRedBlueAcceleration(){
-  mpu.dmpGetQuaternion(&q, fifoBuffer);
-  mpu.dmpGetAccel(&aa, fifoBuffer);
-  mpu.dmpGetGravity(&gravity, &q);
-  mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-  int xAccel = aaReal.x;
-  int yAccel = aaReal.y;
-  int zAccel = aaReal.z;
-  int maxAccelXY = (xAccel > yAccel) ? xAccel : yAccel;
-  int maxAccel = (maxAccelXY > zAccel) ? maxAccelXY : zAccel;
-
-
-  // Calculating stats (just for testing, don't worry about it)
-  /*
-  maxOverallAccel =  (maxOverallAccel > maxAccel) ? maxOverallAccel : maxAccel;
-   accelValues++;
-   if (accelValues == 1){
-   avgAccel = maxAccel;
-   } else{
-   avgAccel = avgAccel - avgAccel/accelValues + maxAccel/accelValues;
-   }*/
-
-  Serial.print("\t");
-  Serial.print(xAccel); 
-  Serial.print("\t");
-  Serial.print(yAccel); 
-  Serial.print("\t");
-  Serial.print(zAccel); 
-  Serial.print("\t");
-  Serial.print(maxAccel);
-
-
-  // Red to Blue based on acceleration
-  int accelVal = (maxAccel-3500) * ((double)255/4000.0);
-  if (accelVal < 0){
-    accelVal = 0;
-  }
-  Serial.print("\t");
-  Serial.println(accelVal);
-  accelVal = (accelVal > 255) ? 255 : accelVal;
-  draw(accelVal, 0, 255 - accelVal); // red to blue
-} 
 
 void draw(int r, int g, int b) {
   //sets LED color based on RGB values
@@ -759,8 +708,120 @@ void userLightInput() {
   }
 }
 
-//=====Hot Potato Feature=======
+void setColor(int* led, int* color){
+  for(int i = 0; i < 3; i++){
+    analogWrite(led[i], 255-color[i]); //note: a low output turns the led on
+  }
+}
 
+
+// =======================
+// IS FREE FALLING
+// =======================
+// one possible test to see whether the ball is in free fall. Assumes the MPU 6050 has 
+// already been properly initialized and that "VectorInt16 aa;" has been declared
+boolean isFreeFalling() {
+  mpu.dmpGetQuaternion(&q, fifoBuffer);
+  mpu.dmpGetAccel(&aa, fifoBuffer);
+  mpu.dmpGetGravity(&gravity, &q);
+  mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
+  int xAcc = aa.x;
+  int yAcc = aa.y;
+  int zAcc = aa.z;
+
+  int a = sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2)); //magnitude of the acceleration
+  // NOTE: pow(_Acc,2) may cause int overflow! If weird numbers start coming out, try the following:
+  /*
+  long xAcc = (long) aa.x;
+   long yAcc = (long) aa.y;
+   long zAcc = (long) aa.z;
+   int a = (int) sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2));
+   */
+
+  return (a < 1000) ? true : false; //the 1000 here is essentially arbitrary
+  /*
+  // If the ball is spinning and the MPU is not at the ball's center of mass (COM), the MPU will experience (and report) an extra
+   // centripetal acceleration. This needs to be removed to get the proper acceleration of the ball's COM for proper freefall detection.
+   int rotVal = getRotationSpeed() / 500; //this 500 is arbitrary but important to fine-tune
+   int centripetalOffset = pow(rotVal, 2)*distFromCOM;
+   int aCOM = a - centripetalOffset;
+   return (aCOM < 1000) ? true : false;
+   */
+}
+
+// ======================
+// CHANGE MDOE LIGHT
+// ======================
+/* 
+ * Changes the light depending on the mode.
+ */
+void changeModeLight(int mode) {
+  int col = mode % 6; //loop back around if mode > 5
+
+  currentColor = COLORS[col];
+  setColor(ledPins, currentColor);
+}
+
+
+// =======================================================================================================================
+// =======================================================================================================================
+// ================================                    FEATURES                    =======================================
+// =======================================================================================================================
+// =======================================================================================================================
+
+
+// ==============================================
+// FADE RED TO BLUE BASED ON ACCELERATION FEATURE
+// ==============================================
+/*
+ * fades from red to blue based on acceleration (doesn't really work yet)
+ */
+void fadeRedBlueAcceleration(){
+  mpu.dmpGetQuaternion(&q, fifoBuffer);
+  mpu.dmpGetAccel(&aa, fifoBuffer);
+  mpu.dmpGetGravity(&gravity, &q);
+  mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
+  int xAccel = aaReal.x;
+  int yAccel = aaReal.y;
+  int zAccel = aaReal.z;
+  int maxAccelXY = (xAccel > yAccel) ? xAccel : yAccel;
+  int maxAccel = (maxAccelXY > zAccel) ? maxAccelXY : zAccel;
+
+
+  // Calculating stats (just for testing, don't worry about it)
+  /*
+  maxOverallAccel =  (maxOverallAccel > maxAccel) ? maxOverallAccel : maxAccel;
+   accelValues++;
+   if (accelValues == 1){
+   avgAccel = maxAccel;
+   } else{
+   avgAccel = avgAccel - avgAccel/accelValues + maxAccel/accelValues;
+   }*/
+
+  Serial.print("\t");
+  Serial.print(xAccel); 
+  Serial.print("\t");
+  Serial.print(yAccel); 
+  Serial.print("\t");
+  Serial.print(zAccel); 
+  Serial.print("\t");
+  Serial.print(maxAccel);
+
+
+  // Red to Blue based on acceleration
+  int accelVal = (maxAccel-3500) * ((double)255/4000.0);
+  if (accelVal < 0){
+    accelVal = 0;
+  }
+  Serial.print("\t");
+  Serial.println(accelVal);
+  accelVal = (accelVal > 255) ? 255 : accelVal;
+  draw(accelVal, 0, 255 - accelVal); // red to blue
+} 
+
+// ==============================================
+// HOT POTATO FEATURE
+// ==============================================
 void hotPotato() {
 
   int t_on = 100; //time (in ms) that the led should be on (per blink)
@@ -768,11 +829,11 @@ void hotPotato() {
   int t_off; //time that the led should be off (per blink). this will change over the course of the loop
 
   int rON[] = {
-    255,0,0                          }; //lights red LED
+    255,0,0                                    }; //lights red LED
   int bON[] = {
-    0,0,255                          }; //lights blue LED
+    0,0,255                                    }; //lights blue LED
   int OFF[] = {
-    0,0,0                          };   
+    0,0,0                                    };   
 
   int duration = random(10000,30000); //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
   int t_lastSwitch = 0;
@@ -824,59 +885,10 @@ void hotPotato() {
   setColor(ledPins, rON); //game is over, turn the led red
 }
 
-//for common anode led
-void setColor(int* led, int* color){
-  for(int i = 0; i < 3; i++){
-    analogWrite(led[i], 255-color[i]); //note: a low output turns the led on
-  }
-}
 
-void setColor(int red, int green, int blue) {
-  analogWrite(redPin, red);
-  analogWrite(greenPin, green);
-  analogWrite(bluePin, blue);  
-}
-
-// one possible test to see whether the ball is in free fall. Assumes the MPU 6050 has 
-// already been properly initialized and that "VectorInt16 aa;" has been declared
-boolean isFreeFalling() {
-  mpu.dmpGetQuaternion(&q, fifoBuffer);
-  mpu.dmpGetAccel(&aa, fifoBuffer);
-  mpu.dmpGetGravity(&gravity, &q);
-  mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-  int xAcc = aa.x;
-  int yAcc = aa.y;
-  int zAcc = aa.z;
-
-  int a = sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2)); //magnitude of the acceleration
-  // NOTE: pow(_Acc,2) may cause int overflow! If weird numbers start coming out, try the following:
-  /*
-  long xAcc = (long) aa.x;
-   long yAcc = (long) aa.y;
-   long zAcc = (long) aa.z;
-   int a = (int) sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2));
-   */
-
-  return (a < 1000) ? true : false; //the 1000 here is essentially arbitrary
-  /*
-  // If the ball is spinning and the MPU is not at the ball's center of mass (COM), the MPU will experience (and report) an extra
-   // centripetal acceleration. This needs to be removed to get the proper acceleration of the ball's COM for proper freefall detection.
-   int rotVal = getRotationSpeed() / 500; //this 500 is arbitrary but important to fine-tune
-   int centripetalOffset = pow(rotVal, 2)*distFromCOM;
-   int aCOM = a - centripetalOffset;
-   return (aCOM < 1000) ? true : false;
-   */
-}
-
-void changeModeLight(int mode) {
-  int col = mode%6; //loop back around if mode > 5
-
-  currentColor = COLORS[col];
-  setColor(ledPins, currentColor);
-}
-
-
-//=========Light Cycle Feature==========
+// ==============================================
+// LIGHT CYCLE FEATURE
+// ==============================================
 /*
  * Times the duration of each throw, and fades from red to blue linearly or parabolically using the duration of the previous throw.
  *
@@ -930,13 +942,30 @@ void lightCycle() {
   }
 }
 
+// ==============================================
+// SENSOR TEMPERATURE FEATURE
+// ==============================================
+/*
+ * Should show temperature from the sensor, and then map
+ * it to an int between 0 and 255 so that it is visible.
+ * Currently buggy. MPU doesn't seem to work properly.
+ */
+void showSensorTemperature() {
+  double sensorTemp = ((double)mpu.getTemperature() + 12412.0) / 340.0;
+  int sensorTempInt = (int)sensorTemp;
+  draw(sensorTempInt, 0, 255 - sensorTempInt);
+}
 
-
-
-
-
-
-
-
-
+// ==============================================
+// WEB TEMPERATURE FEATURE
+// ==============================================
+void showWebTemperature() {
+  numLoops++;
+  if (numLoops % 100 == 0) {
+    Serial1.println("Getting Temperature");
+    receiveStringFromComputer();
+    int webTemp = computerString.toInt();
+    draw(webTemp, 0, 255 - webTemp);
+  }
+}
 
