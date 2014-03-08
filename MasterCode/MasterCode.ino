@@ -409,13 +409,19 @@ void loop() {
 
     switch(mode) {
     case 0:
+      Serial.println("Running red blue acceleration");
       fadeRedBlueAcceleration();
+      Serial.println("End red blue acceleration");
       break;
     case 1:
+      Serial.println("Running hot potato");
       hotPotato();
+      Serial.println("End hot potato");
       break;
     case 2:
+      Serial.println("Running light cycle");
       lightCycle();
+      Serial.println("End light cycle");
       break;
     }           
 
@@ -471,7 +477,7 @@ int getRotationSpeed255() {
 }
 // Fade from red to blue based on rotation speed
 void fadeRedBlueRotation(){
-  rotVal = getRotationSpeed255();
+  int rotVal = getRotationSpeed255();
   draw(rotVal, 0, 255 - rotVal); // R-B
   //fadeRedBlueGreen(rotVal); // R-B-G 
 }
@@ -479,7 +485,7 @@ void fadeRedBlueRotation(){
 // Fade from red to blue to green based on rotational speed
 // Doesn't work all that well, the colors don't fade very evenly so it flickers a lot
 void fadeRBGRotation(){
-  rotVal = getRotationSpeed255();
+  int rotVal = getRotationSpeed255();
   fadeRedBlueGreen(rotVal); // R-B-G 
 }
 
