@@ -152,8 +152,8 @@ int bluePin = 9;
 // LightCycle Mode Variables
 // ==========================
 boolean freeFalling; // set to true if accelerometer is experiencing freefall; false if not
-int throwStartTime; // time in milliseconds between the program start and the last time the accelerometer entered freefall
-int throwEndTime; // time in milliseconds between the program start and the last time the accelerometer exited freefall
+unsigned long throwStartTime; // time in milliseconds between the program start and the last time the accelerometer entered freefall
+unsigned long throwEndTime; // time in milliseconds between the program start and the last time the accelerometer exited freefall
 int lastThrowDuration = 100; // the duration in milliseconds that it was last in freefall (throwEndTime - throwStartTime). First throw 100 default arbitrary - fix?
 
 // ========================
@@ -405,21 +405,26 @@ void loop() {
       }
       break;
     case 3:
+     {
+       redToBlueFade(500, redPin, bluePin);
+     }
+    break;
+    case 4:
       {
         lightCycle();
       }
       break;
-    case 4:
+    case 5:
       {
         showSensorTemperature();
       }
       break;
-    case 5:
+    case 6:
       {
         userLightInput();
       }
       break; 
-    case 6:
+    case 7:
       {
         showWebTemperature();
       }
@@ -562,8 +567,38 @@ void hotPotato() {
 }
 
 
+// ===========================================
+// RED TO BLUE FADE FEATURE (by Ingerid!)
+// ===========================================
+//Fades red to blue wit. Might need to change color more often.
+// seems to work, but not tested with avg time function and real free fall
+// note: my led is lit up at 0 and off at 255. If this is also true
+// for led in juggling ball, must switch red and blue variables.
+// Function needs pin number of red, blue, and time (in ms) fall expected to take.
+void redToBlueFade(int time,int redPin,int bluePin) {
+  int red; //will give how much red output from scale of 0 to 255
+  int blue;
+  
+  unsigned long startTime=millis();
+  unsigned long landTime=time+millis(); //time expected to land
+
+  while (millis() < landTime) { //before it lands, change color often
+    blue = map(millis(),startTime,landTime,0,255);
+    blue= constrain(blue,0,255); // just in case something goes wrong
+    red = map(millis(),startTime,landTime,255,0);
+    red = constrain(red,0,255);
+
+  
+    analogWrite(redPin,red);     //outputs color
+    analogWrite(bluePin,blue);
+    
+    delay(10); //wait before changing color again to limit crazy flow of data
+  }
+}
+
+
 // ==============================================
-// LIGHT CYCLE FEATURE
+// LIGHT CYCLE FEATURE (by Matt!)
 // ==============================================
 /*
  * Times the duration of each throw, and fades from red to blue linearly or parabolically using the duration of the previous throw.
@@ -586,7 +621,7 @@ void lightCycle() {
 
   // Updating the lights mid-throw
   if (isFreeFalling() && freeFalling) {
-    int airTime = millis() - throwStartTime; // Time in milliseconds since leaving the hand
+    int airTime = (int)(millis() - throwStartTime); // Time in milliseconds since leaving the hand
     float cycleProgress = ((double) airTime) / lastThrowDuration; // "Progress" through the cycle of the throw (described better below)
     // TODO: clean up the casting?
     cycleProgress = (cycleProgress > 1) ? 1 : cycleProgress;
@@ -668,7 +703,7 @@ void enterModeSelection() {
   String numModesString = String(NUMBER_OF_MODES);
 
   boolean buttonClicked = false;
-  int modeSelectionStartTime = millis();
+  unsigned long modeSelectionStartTime = millis();
   changeModeLight(mode); //lights up the leds
 
   while (true) {
@@ -699,7 +734,7 @@ void enterModeSelection() {
       Serial.println("Button released");
     }
 
-    int timeWaited = millis() - modeSelectionStartTime;
+    int timeWaited = (int)(millis() - modeSelectionStartTime);
     if (timeWaited > MODE_SELECTION_WAIT) break;
   }
 
