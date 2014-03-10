@@ -416,12 +416,12 @@ void loop() {
       break;
     case 5:
       {
-        showSensorTemperature();
+        userLightInput();
       }
       break;
     case 6:
       {
-        userLightInput();
+        showSensorTemperature();
       }
       break; 
     case 7:
