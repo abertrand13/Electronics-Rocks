@@ -564,6 +564,16 @@ void hotPotato() {
   }
 
   setColor(ledPins, rON); //game is over, turn the led red
+  
+  while (true) {//wait for the user to reset the game
+    // Receives information from computer
+    receiveStringFromComputer();
+    // Receives information from arduino
+    receiveCharFromArduino();
+    if (checkForEscape()) break;
+    
+    if (digitalRead(BUTTON_PIN) == LOW) break;
+  }
 }
 
 
