@@ -396,25 +396,30 @@ void loop() {
       break;
     case 1:
       {
-        hotPotato();
+        fadeRedBlueRotation();
       }
       break;
     case 2:
       {
-        lightCycle();
+        hotPotato();
       }
       break;
     case 3:
       {
-        showSensorTemperature();
+        lightCycle();
       }
       break;
     case 4:
       {
+        showSensorTemperature();
+      }
+      break;
+    case 5:
+      {
         userLightInput();
       }
       break; 
-    case 5:
+    case 6:
       {
         showWebTemperature();
       }
@@ -480,6 +485,17 @@ void fadeRedBlueAcceleration(){
 } 
 
 // ==============================================
+// ROTATION FADE FEATURE
+// ==============================================
+
+// Fade from red to blue based on rotation speed
+void fadeRedBlueRotation(){
+  int rotVal = getRotationSpeed255();
+  draw(rotVal, 0, 255 - rotVal); // R-B
+  //fadeRedBlueGreen(rotVal); // R-B-G 
+}
+
+// ==============================================
 // HOT POTATO FEATURE
 // ==============================================
 void hotPotato() {
@@ -489,11 +505,11 @@ void hotPotato() {
   int t_off; //time that the led should be off (per blink). this will change over the course of the loop
 
   int rON[] = {
-    255,0,0                                    }; //lights red LED
+    255,0,0                                      }; //lights red LED
   int bON[] = {
-    0,0,255                                    }; //lights blue LED
+    0,0,255                                      }; //lights blue LED
   int OFF[] = {
-    0,0,0                                    };   
+    0,0,0                                      };   
 
   int duration = random(10000,30000); //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
   int t_lastSwitch = 0;
@@ -787,7 +803,7 @@ void userLightInput() {
         }
       }
     }
-    
+
     draw(red, green, blue);
   }
 }
@@ -895,13 +911,6 @@ int getRotationSpeed255() {
   return rotVal;
 }
 
-// Fade from red to blue based on rotation speed
-void fadeRedBlueRotation(){
-  int rotVal = getRotationSpeed255();
-  draw(rotVal, 0, 255 - rotVal); // R-B
-  //fadeRedBlueGreen(rotVal); // R-B-G 
-}
-
 // Fade from red to blue to green based on rotational speed
 // Doesn't work all that well, the colors don't fade very evenly so it flickers a lot
 void fadeRBGRotation(){
@@ -984,4 +993,5 @@ boolean isFreeFalling() {
    return (aCOM < 1000) ? true : false;
    */
 }
+
 
