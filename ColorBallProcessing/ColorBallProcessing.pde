@@ -34,16 +34,21 @@ int WINDOW_HEIGHT = 600;
 
 int SECONDARY_LIST_WIDTH = 150;
 
+// Temperature Mode
 char TEMPERATURE_MODE = '5';
 
+// LED Values
 int redVal = 255;
 int greenVal = 255;
 int blueVal = 255;
 
+// Current Web Temperature
 int currentTemp = 0;
 
+// Background image
 PImage bgImg;
 
+// Boolean value that says whether the color picker is active
 boolean colorPickerActive = false;
 
 /*
@@ -56,26 +61,29 @@ boolean sketchFullScreen() {
  */
 
 /*
-Sets up the game. Called automatically when the program begins.
+ * Sets up the game. Called automatically when the program begins.
  */
 void setup() { 
+  // Set window size
   size(WINDOW_WIDTH, WINDOW_HEIGHT);
+  
+  // Set text font
   textFont(createFont("Arial", 14));
-  // Sets up the Serial port. Enter the name of your usb cable here by going to the Arduino program, then clicking on tools, then Serial Port, and then checking which usb is being used   
+  
+  // Sets up the Serial port. Enter the name of your usb cable here by checking which usb is being used.   
   myPort = new Serial(this, "/dev/tty.usbserial-A702NXEJ", 9600);    
   myPort.bufferUntil('\n');      // Buffers until the Serial sends a new line character   
 
+  // Main GUI Controller
   cp5 = new ControlP5(this);
-
-  // Color picker
-  //cp = cp5.addColorPicker("picker").setPosition(60, 100).setColorValue(color(255, 128, 0, 128));
 
   // Mode Selection Button
   ms = cp5.addButton("GoToModeSelection").setLabel("Go To Mode Selection").setValue(0).setPosition(10, 10).setSize(95, 20);
 
-  // Multilist
+  // Mode Select Multilist
   l = cp5.addMultiList("myList", 120, 10, 60, 20); 
 
+  // Multilist Setup
   MultiListButton levelSelect;
   levelSelect = l.add("Mode Select", -1);
   levelSelect.add("mode0", 0).setLabel("Mode 0: Acceleration Fade").setWidth(SECONDARY_LIST_WIDTH);
@@ -89,19 +97,22 @@ void setup() {
   levelSelect.add("mode8", 8).setLabel("Mode 8").setWidth(SECONDARY_LIST_WIDTH);
 
   // 23511612 = the WOEID of Stanford University
-  // use this site to find out about your WOEID : http://sigizmund.info/woeidinfo/
+  // use this site to find out about your WOEID : http://woeid.rosselliot.co.nz/
   weather = new YahooWeather(this, 23511612, "c", updateIntervallMillis);
   
+  // Load background image
   bgImg = loadImage("background.jpg");
   bgImg.resize(WINDOW_WIDTH, WINDOW_HEIGHT);
 }
 
 /*
-Main drawing loop: called automatically when the program begins.
+ * Main drawing loop: called automatically when the program begins.
  */
 void draw() {
+  // Updates weather
   weather.update();
 
+  // Sets background.
   if (colorPickerActive) {
     background(cp.getColorValue());
   } else {
@@ -109,10 +120,8 @@ void draw() {
   }
     
   
+  // Textual weather information
   fill(0);
-  //textSize(12);
-  //text(serialString, 20, 50);
-
   textSize(9);
   currentTemp = int(weather.getTemperature() * 1.8) + 32;
   text("Current Temperature: "+currentTemp, 20, WINDOW_HEIGHT - 60);
@@ -121,21 +130,24 @@ void draw() {
 }
 
 /*
-Called when a Serial event occurs: gets the handle position data and adjusts the paddle positions on the screen accordingly.
+ * Called when a Serial event occurs: gets the handle position data and adjusts the paddle positions on the screen accordingly.
  */
 void serialEvent(Serial myPort) {
-  // Reads in data from the Serial until a new line. This data comes from the Arduino program and represents the player or the x position of the handle
+  // Reads in data from the Serial until a new line. This data comes from the Arduino program.
   serialString = myPort.readStringUntil('\n');
 
+  // Writes temperature to port when "GetTemperature" is received
   if (serialString.charAt(0) == 'G') {
     myPort.write(String.valueOf(currentTemp));
     myPort.write("\n");
   }
 }
 
+/*
+ * Called when a controller event occurs in the GUI.
+ */
 public void controlEvent(ControlEvent c) {
-  // when a value change from a ColorPicker is received, extract the ARGB values
-  // from the controller's array value
+  // Extracts and writes the RGB values to port when the ColorPicker changes value
   if (c.isFrom(cp)) {
     redVal = int(c.getArrayValue(0));
     myPort.write("Colors: ");
@@ -151,6 +163,7 @@ public void controlEvent(ControlEvent c) {
     int a = int(c.getArrayValue(3));
     color col = color(redVal, greenVal, blueVal, a);
   } 
+  // Writes the selected mode to port when the appropriate button is clicked
   else if (c.isFrom(l) && c.value() != -1) {
     if (int(c.value()) == 5) {
       // Color picker
@@ -160,6 +173,7 @@ public void controlEvent(ControlEvent c) {
     myPort.write(String.valueOf(int(c.value())));
     myPort.write("\n");
   } 
+  // Writes to go to mode selection when the approriate button is clicked
   else if (c.isFrom(ms)) {
     if (colorPickerActive) {
       cp.remove();
