@@ -184,22 +184,20 @@ int MODE_SELECTION_WAIT = 7000;
 // Color Variables
 // ====================================
 // Predefined Colors
-int RED[] = {
-  255, 0, 0};    
-int GREEN[] = {
-  0, 255, 0}; 
-int BLUE[] = {
-  0, 0, 255}; 
-int YELLOW[] = {
-  255, 255, 0}; 
-int CYAN[] = {
-  0, 255, 255}; 
-int MAGENTA[] = {
-  255, 0, 255};
-int WHITE[] = {
-  255, 255, 255}; 
-int BLACK[] = {
-  0, 0, 0}; 
+// TODO: Convert to bytes to save memory?
+int RED[] = {255, 0, 0};    
+int GREEN[] = {0, 255, 0}; 
+int BLUE[] = {0, 0, 255}; 
+int YELLOW[] = {255, 255, 0}; 
+int CYAN[] = {0, 255, 255}; 
+int MAGENTA[] = {255, 0, 255};
+int WHITE[] = {255, 255, 255}; 
+int BLACK[] = {0, 0, 0}; 
+  
+byte PINK[] = {158, 4, 79}; 
+byte INDIGO[] = {4, 0, 19}; 
+byte ORANGE[] = {83, 4, 0}; 
+byte BLUE2[] = {0, 0, 225}; 
 
 // Current color
 int* currentColor = WHITE;
@@ -429,6 +427,10 @@ void loop() {
         showWebTemperature();
       }
       break;
+      case 8: 
+      {
+        accelerationFlashing();
+      }
     }
   }
 }
@@ -677,6 +679,19 @@ void showSensorTemperature() {
   draw(sensorTempInt, 0, 255 - sensorTempInt);
 }
 
+// Juan's version - TODO: reconcile/combine with the above and add to mode choices
+void setColorOnTemperature(int temp){
+  //sets the color based on temperature
+  
+  if (temp >= 40) { //when it is hot
+    fadeToColor(ledPins, ORANGE, INDIGO, 10);
+    fadeToColor(ledPins, INDIGO, ORANGE, 10);
+  } else{ //when it is cold
+    fadeToColor(ledPins, BLUE2, ORANGE, 10);
+    fadeToColor(ledPins, ORANGE, BLUE2, 10); 
+  }
+}
+
 // ==============================================
 // WEB TEMPERATURE FEATURE
 // ==============================================
@@ -688,6 +703,32 @@ void showWebTemperature() {
     int webTemp = computerString.toInt();
     draw(webTemp, 0, 255 - webTemp);
   }
+}
+
+// ==============================================
+// ACCELERATION FLASHING FEATURE by Juan! 
+// ==============================================
+/*
+ * Flashes red, blue, green very quickly if it's accelerating a lot, less quickly otherwise.
+ * Currently causes FIFO overflow because of the delays.
+ */
+void accelerationFlashing() {
+  int accel = getLinearAccelerationMagnitude();
+  int timeDelay = 160; //change as you like!
+  if (accel > 5000)
+    rapidFlashing(timeDelay/5);
+  else 
+    rapidFlashing(timeDelay);
+}
+
+void rapidFlashing(int time) {
+  //LED flashes from red to blue to green at a rate based on maximum acceleration
+  setColor(ledPins, RED);
+  delay(time);
+  setColor(ledPins, BLUE);
+  delay(time);
+  setColor(ledPins, GREEN);
+  delay(time);
 }
 
 // =======================================================================================================================
@@ -930,6 +971,39 @@ void setColor(int* led, int* color){
   }
 }
 
+void setColor(int* led, byte* color){
+  for(int i = 0; i< 3; i++){
+    analogWrite(led[i], 255-color[i]);  
+  }
+}
+
+/**
+ * Fades from startColor to endColor with speed fadeSpeed.
+ * Uses bytes for colors instead of ints to save memory.
+ */
+void fadeToColor(int* led, byte* startColor, byte* endColor, int fadeSpeed){
+  int changeRed = endColor[0] - startColor[0];                            //the difference in the two colors for the red channel
+  int changeGreen = endColor[1] - startColor[1];                          //the difference in the two colors for the green channel 
+  int changeBlue = endColor[2] - startColor[2];                           //the difference in the two colors for the blue channel
+  int steps = max(abs(changeRed),max(abs(changeGreen), abs(changeBlue))); //make the number of change steps the maximum channel change
+  
+  for(int i = 0 ; i < steps; i++){                                        //iterate for the channel with the maximum change
+   byte newRed = startColor[0] + (i * changeRed / steps);                 //the newRed intensity dependant on the start intensity and the change determined above
+   byte newGreen = startColor[1] + (i * changeGreen / steps);             //the newGreen intensity
+   byte newBlue = startColor[2] + (i * changeBlue / steps);               //the newBlue intensity
+   byte newColor[] = {newRed, newGreen, newBlue};                         //Define an RGB color array for the new color
+   setColor(ledPins, newColor);                                               //Set the LED to the calculated value
+   delay(fadeSpeed);                                                      //Delay fadeSpeed milliseconds before going on to the next color
+  }
+  setColor(led, endColor);                                                //The LED should be at the endColor but set to endColor to avoid rounding errors
+}
+
+// A version of fadeToColor that takes predefined colors (neccesary to allow const int pre-defined colors */
+void fadetoColor(int* led, const byte* startColor, const byte* endColor, int fadeSpeed){
+   byte tempColor1[] = {startColor[0], startColor[1], startColor[2]};
+   byte tempColor2[] = {endColor[0], endColor[1], endColor[2]};
+   fadeToColor(ledPins, tempColor1, tempColor2, fadeSpeed);
+}
 
 // =======================================
 // SENSOR INPUT HELPER METHODS
@@ -954,6 +1028,21 @@ int getRotationSpeed255() {
   int rotVal = maxRot * (255/8000.0);
   rotVal = (rotVal > 255) ? 255 : rotVal; //normalize it to never be more than 255
   return rotVal;
+}
+
+/*
+ * Returns the magnitude of linear acceleration with gravity removed.
+ */
+int getLinearAccelerationMagnitude() {
+  mpu.dmpGetQuaternion(&q, fifoBuffer); // Required for removing effects of gravity
+  mpu.dmpGetAccel(&aa, fifoBuffer); // Sets aa to the acceleration registered
+  mpu.dmpGetGravity(&gravity, &q); // Sets gravity to a unit vector in the direction of gravity (if not in free fall)
+  mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity); // Sets aaReal to the linear acceleration with gravity removed.
+  //The below are longs instead of ints because we'll need them to be longs when we square them (they go over int's max value)
+  long xAcc = aa.x; 
+  long yAcc = aa.y;
+  long zAcc = aa.z;
+  return sqrt(pow(xAcc, 2) + pow(yAcc, 2) + pow(zAcc, 2));
 }
 
 // Fade from red to blue to green based on rotational speed
@@ -1011,15 +1100,7 @@ void fadeRedBlueParabolically(float val, float rStopVal = 1.0, float bStartVal =
 // one possible test to see whether the ball is in free fall. Assumes the MPU 6050 has 
 // already been properly initialized and that "VectorInt16 aa;" has been declared
 boolean isFreeFalling() {
-  mpu.dmpGetQuaternion(&q, fifoBuffer);
-  mpu.dmpGetAccel(&aa, fifoBuffer);
-  mpu.dmpGetGravity(&gravity, &q);
-  mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-  int xAcc = aa.x;
-  int yAcc = aa.y;
-  int zAcc = aa.z;
-
-  int a = sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2)); //magnitude of the acceleration
+  int a = getLinearAccelerationMagnitude(); //magnitude of the acceleration
   // NOTE: pow(_Acc,2) may cause int overflow! If weird numbers start coming out, try the following:
   /*
   long xAcc = (long) aa.x;
