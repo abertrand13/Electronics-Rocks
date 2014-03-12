@@ -156,6 +156,12 @@ unsigned long throwStartTime; // time in milliseconds between the program start 
 unsigned long throwEndTime; // time in milliseconds between the program start and the last time the accelerometer exited freefall
 int lastThrowDuration = 100; // the duration in milliseconds that it was last in freefall (throwEndTime - throwStartTime). First throw 100 default arbitrary - fix?
 
+const int historyLength = 10; // Keep it even, to be safe. The greater this is, the less sensitive LightCycle is to spiking acceleration (which helps muffle noise)
+int accelHistory[historyLength];
+int recentAvgAccel = 0;
+int olderAvgAccel = 0;
+int historyIndex = 0;
+
 // ========================
 // Initial Config Variables
 // ========================
@@ -215,7 +221,7 @@ void setup() {
 
   // Useful for debugging. Remove for final product
   while(!Serial);
-
+  
   // ====================
   // HARDWARE SETUP
   // ====================
@@ -328,7 +334,7 @@ void loop() {
   // if programming failed, don't try to do anything
   if (!dmpReady) return;
 
-  // wait for MPU interrupt or extra packet(s) available
+   // wait for MPU interrupt or extra packet(s) available
   while (!mpuInterrupt && fifoCount < packetSize) {
     // other program behavior stuff here
     // .
@@ -410,6 +416,8 @@ void loop() {
     case 4:
       {
         lightCycle();
+        updateAccelHistory();
+        //displayIfInFreeFall();
       }
       break;
     case 5:
@@ -591,7 +599,7 @@ void redToBlueFade(int time,int redPin,int bluePin) {
   int red; //will give how much red output from scale of 0 to 255
   int blue;
   
-  unsigned long startTime=millis();
+  unsigned long startTime=millis() % 1000000;
   unsigned long landTime=time+millis(); //time expected to land
 
   while (millis() < landTime) { //before it lands, change color often
@@ -613,6 +621,27 @@ void redToBlueFade(int time,int redPin,int bluePin) {
 // LIGHT CYCLE FEATURE (by Matt!)
 // ==============================================
 /*
+ * Test feature to delete: displayIfInFreeFall()
+ *
+ */
+void displayIfInFreeFall() {
+  //Serial.println(getLinearAccelerationMagnitude());
+  if (accelIsPlunging(0.33)){
+     //Serial.print("\t\t");
+     draw(255,255,0); 
+     Serial.println("Plunge!!!!!!!!!!!!!!!!");
+  }
+  else if (accelIsSpiking(3.0)){
+    draw (0,255,255);
+    Serial.println("Spike!!");
+  }
+  else {
+    draw (255,255,255);
+  }
+  //Serial.println(getLinearAccelerationMagnitude());
+}
+
+/*
  * Times the duration of each throw, and fades from red to blue linearly or parabolically using the duration of the previous throw.
  *
  * Note: this function is designed delay free to avoid FIFO overflow. So, the program will be quickly alternating between the main loop and this function.
@@ -624,15 +653,15 @@ void redToBlueFade(int time,int redPin,int bluePin) {
 void lightCycle() {
 
   // Detecting the start of a throw
-  if (isFreeFalling() && !freeFalling) { 
+  if (accelIsPlunging(0.33) && !freeFalling) { 
     freeFalling = true;
-    throwStartTime = millis();  // millis() is the current time since program start in milliseconds
+    throwStartTime = millis() % 100000;  // millis() is the current time since program start in milliseconds. Taken mod 100,000 to prevent [unlikely] overflow.
     Serial.println("Free fall started!"); // for debugging purposes
     Serial1.println("Free fall started!"); // for wireless debugging purposes
   }
 
   // Updating the lights mid-throw
-  if (isFreeFalling() && freeFalling) {
+  if (freeFalling) {
     int airTime = (int)(millis() - throwStartTime); // Time in milliseconds since leaving the hand
     float cycleProgress = ((double) airTime) / lastThrowDuration; // "Progress" through the cycle of the throw (described better below)
     // TODO: clean up the casting?
@@ -644,7 +673,7 @@ void lightCycle() {
     int cycleProgress255 = (int) (cycleProgress * 255);
     int red = 255 - cycleProgress255; // Starts at 255, linearly declines to 0
     int blue = cycleProgress255; // Starts at 0, linearly increases to 255
-    draw(red, 0, blue);
+    draw(255-red, 255, 255-blue);
 
     // === Parabolic Fading ====
     // fadeRedBlueParabolically(cycleProgress, 0.6, 0.4);
@@ -654,10 +683,12 @@ void lightCycle() {
   // If it is no longer in free fall and we haven't set freeFalling back to false yet, set it to false, and set throwEndTime and lastThrowDuration.
   // Potential issue: is the minimum accel threshold for !isFreeFalling() too low? 
   // Do we need a isStronglyAccelerating() function with a higher minimum threshold instead of !isFreeFalling()?
-  if (freeFalling && !isFreeFalling()) {
+  if (freeFalling && accelIsSpiking(3.0)) {
     freeFalling = false;
-    throwEndTime = millis();
-    lastThrowDuration = throwEndTime - throwStartTime;
+    throwEndTime = millis() % 100000;
+    int duration = throwEndTime - throwStartTime;
+    if (duration > 10)
+      lastThrowDuration = (duration > 32000) ? 32000 : duration;
     Serial.println("Free fall stopped. Duration:"); // for debugging purposes
     Serial.println(lastThrowDuration); // for debugging purposes
     Serial1.println("Free fall stopped. Duration:"); // for wireless debugging purposes
@@ -754,7 +785,7 @@ void enterModeSelection() {
   String numModesString = String(NUMBER_OF_MODES);
 
   boolean buttonClicked = false;
-  unsigned long modeSelectionStartTime = millis();
+  unsigned long modeSelectionStartTime = millis() % 100000;
   changeModeLight(mode); //lights up the leds
 
   while (true) {
@@ -775,7 +806,7 @@ void enterModeSelection() {
       buttonClicked = true;
       mode = (mode + 1) % NUMBER_OF_MODES;
       changeModeLight(mode);
-      modeSelectionStartTime = millis();
+      modeSelectionStartTime = millis() % 100000;
       Serial.print("Button pressed: Mode ");
       Serial.println(mode); 
     }
@@ -1099,6 +1130,8 @@ void fadeRedBlueParabolically(float val, float rStopVal = 1.0, float bStartVal =
 // =======================
 // one possible test to see whether the ball is in free fall. Assumes the MPU 6050 has 
 // already been properly initialized and that "VectorInt16 aa;" has been declared
+// unfortunately, not very accurate yet...
+// i2CdevLib's getIntFreefallStatus does not always work either.
 boolean isFreeFalling() {
   int a = getLinearAccelerationMagnitude(); //magnitude of the acceleration
   // NOTE: pow(_Acc,2) may cause int overflow! If weird numbers start coming out, try the following:
@@ -1109,15 +1142,76 @@ boolean isFreeFalling() {
    int a = (int) sqrt(pow(xAcc,2) + pow(yAcc,2) + pow(zAcc,2));
    */
 
-  return (a < 1000) ? true : false; //the 1000 here is essentially arbitrary
-  /*
+  //return (a < 2000) ? true : false; //the 1000 here is essentially arbitrary
+  
   // If the ball is spinning and the MPU is not at the ball's center of mass (COM), the MPU will experience (and report) an extra
    // centripetal acceleration. This needs to be removed to get the proper acceleration of the ball's COM for proper freefall detection.
    int rotVal = getRotationSpeed() / 500; //this 500 is arbitrary but important to fine-tune
    int centripetalOffset = pow(rotVal, 2)*distFromCOM;
+   //Serial.println(centripetalOffset); // usually tiny; can get up to 2500 if turning fast 
    int aCOM = a - centripetalOffset;
-   return (aCOM < 1000) ? true : false;
-   */
+   return (aCOM < 3000) ? true : false;
+   
+}
+
+// ====================================
+// SHARP ACCELERATION CHANGE DETECTION
+// ====================================
+
+/*
+ * The arduino stores its magnitude of acceleration over the past historyLength readings in the global array accelHistory[]. 
+ * This function updates it.
+ * TODO: Re-implement as a pair of queues to clean up all the % syntax? (functionally identical)
+ */
+void updateAccelHistory() {
+   int accelToInsert = getLinearAccelerationMagnitude(); // current acceleration
+   int accelToRemove = accelHistory[historyIndex]; // acceleration we're replacing in the history array (historyIndex is the index of the spot in the array to update)
+   int midIndex = (historyIndex+historyLength/2) % historyLength;
+   int midAccel = accelHistory[midIndex]; // acceleration that was part of recentAvgAccel and is now becoming part of olderAvgAccel
+   recentAvgAccel = recentAvgAccel + (accelToInsert - midAccel)/(historyLength/2); // update recentAvgAccel
+   olderAvgAccel = olderAvgAccel + (midAccel - accelToRemove)/(historyLength/2); 
+   accelHistory[historyIndex] = accelToInsert;
+   historyIndex = (historyIndex + 1) % historyLength; // % operation used to make it cycle from 0 to historyLength-1
+   
+//   Serial.print("recentAvgAccel:");
+//   Serial.print("\t");
+//   Serial.print(recentAvgAccel);
+//   Serial.print("\t");
+//   Serial.print("olderAvgAccel:");
+//   Serial.print("\t");
+//   Serial.print(olderAvgAccel);
+//   Serial.print("\t");
+//   Serial.print("currentAccel:");
+//   Serial.print("\t");
+//   Serial.print(accelToInsert);
+//   Serial.print("\t");
+//   Serial.print("midAccel:");
+//   Serial.print("\t");
+//   Serial.print(midAccel);
+//   Serial.print("\t");
+//   Serial.print("midIndex:");
+//   Serial.print("\t");
+//   Serial.print(midIndex);
+//   Serial.print("\t");
+//   Serial.print("accelToRemove:");
+//   Serial.print("\t");
+//   Serial.println(accelToRemove);
+}
+
+/*
+ * Returns whether the average of magnitudes of the past 5 acceleration readings is at least thresholdPercentage times the previous 5.
+ * E.g. if thresholdPercentage = 2.0, it will return true if and only if the past 5 readings have on average at least 2x the accel magnitude as the 5 before that.
+ * Uses averages from history to muffle noise reading noise.
+ */
+boolean accelIsSpiking(float thresholdPercentage) {
+  return (recentAvgAccel >= olderAvgAccel*thresholdPercentage);
+}
+
+/*
+ * Returns whether the average of magnitudes of the past 5 acceleration readings is less than thresholdPercentage times the previous 5.
+ */
+boolean accelIsPlunging(float thresholdPercentage) {
+  return (recentAvgAccel < olderAvgAccel*thresholdPercentage);
 }
 
 
