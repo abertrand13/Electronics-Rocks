@@ -181,7 +181,7 @@ int BUTTON_PIN = 15;
 int mode = 0;
 
 // Number of modes in mode selection
-int NUMBER_OF_MODES = 8;
+int NUMBER_OF_MODES = 10;
 
 // Amount of time to wait to advance from mode selection
 int MODE_SELECTION_WAIT = 7000;
@@ -439,6 +439,12 @@ void loop() {
       {
         accelerationFlashing();
       }
+      break;
+      case 9: 
+      {
+        gravityGlow();
+      }
+      break;
     }
   }
 }
@@ -761,6 +767,20 @@ void rapidFlashing(int time) {
   setColor(ledPins, GREEN);
   delay(time);
 }
+
+// ================
+// GRAVITY GLOW
+// ================
+/*
+ * Changes color according to the current orientation of the ball.
+ */
+void gravityGlow() {
+  mpu.dmpGetQuaternion(&q, fifoBuffer);
+  mpu.dmpGetGravity(&gravity, &q);
+  //draw((int) 127*(1+gravity.x),(int) 127*(1+gravity.y),(int) 127*(1+gravity.z));
+  draw((int) 255*(1-abs(gravity.x)),(int) 255*(1-abs(gravity.y)),(int) 255*(1-abs(gravity.z))); // Another option
+}
+
 
 // =======================================================================================================================
 // =======================================================================================================================
