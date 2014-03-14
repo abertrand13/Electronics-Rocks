@@ -144,6 +144,8 @@ String arduinoString;
 int ledPins[] = {
   9, 10, 11};
 
+
+//DELETE ONE OF THESE
 int redPin = 11;
 int greenPin = 10;
 int bluePin = 9;
@@ -242,8 +244,8 @@ void setup() {
     Serial1.begin(9600);
 
   // Useful for debugging. Remove for final product
-  if (usingWiredSerial)
-    while(!Serial);
+  //if (usingWiredSerial)
+    //while(!Serial);
 
   // ====================
   // HARDWARE SETUP
@@ -419,12 +421,12 @@ void loop() {
     switch(mode) {
     case 0:
       {
-        nextColor = accelerationFade(RED, BLUE);
+        accelerationFade(nextColor, RED, BLUE);
       }
       break;
     case 1:
       {
-        nextColor = rotationFade(RED, BLUE);
+        rotationFade(nextColor, RED, BLUE);
       }
       break;
     case 2:
@@ -434,29 +436,31 @@ void loop() {
       break;
     case 3:
       {
-        nextColor = timeFade(RED, BLUE, 500);
+        timeFade(nextColor, RED, BLUE, 500);
       }
       break;
     case 4:
       {
-        nextColor = lightCycle(RED, BLUE);
+        lightCycle(nextColor, RED, BLUE);
         updateAccelHistory();
         //displayIfInFreeFall();
       }
       break;
     case 5:
       {
-        nextColor = userLightInput();
+        userLightInput(nextColor);
       }
       break;
     case 6:
       {
-        nextColor = accelerationFade(sensorTemperatureFade(BLUE, RED, 0, 50), GREEN);
+        byte baseColor[3];
+        sensorTemperatureFade(baseColor, BLUE, RED, 0, 50);
+        accelerationFade(nextColor, baseColor, GREEN);
       }
       break; 
     case 7:
       {
-        nextColor = webTemperatureFade(BLUE, RED, 32, 100);
+        webTemperatureFade(nextColor, BLUE, RED, 32, 100);
       }
       break;
     case 8: 
@@ -466,7 +470,7 @@ void loop() {
       break;
     case 9: 
       {
-        nextColor = gravityGlow();
+        gravityGlow(nextColor);
       }
       break;
     }
@@ -491,7 +495,7 @@ void loop() {
 /*
  * fades from red to blue based on acceleration (doesn't really work yet)
  */
-byte* accelerationFade(byte* lowColor, byte* highColor){
+void accelerationFade(byte *outputColor, byte *lowColor, byte *highColor){
   mpu.dmpGetQuaternion(&q, fifoBuffer);
   mpu.dmpGetAccel(&aa, fifoBuffer);
   mpu.dmpGetGravity(&gravity, &q);
@@ -530,7 +534,7 @@ byte* accelerationFade(byte* lowColor, byte* highColor){
   Serial.print("\t");
   Serial.println(accelVal);
   accelVal = (accelVal > 255) ? 255 : accelVal;
-  return lerpColors255(lowColor, highColor, accelVal);
+  lerpColors255(outputColor, lowColor, highColor, accelVal);
 } 
 
 // ==============================================
@@ -538,9 +542,16 @@ byte* accelerationFade(byte* lowColor, byte* highColor){
 // ==============================================
 
 // Fade from lowColor to highColor based on rotation speed
-byte* rotationFade(byte* lowColor, byte* highColor){
+void rotationFade(byte *outputColor, byte *lowColor, byte *highColor){
   byte rotVal = getRotationSpeed255();
-  return lerpColors255(lowColor, highColor, rotVal);
+  lerpColors255(outputColor, lowColor, highColor, rotVal);
+  Serial.print("\tRotval: ");
+  Serial.print(rotVal);
+  Serial.print("\t");
+  Serial.print(outputColor[0]);
+  Serial.print("\t");
+  Serial.println(outputColor[2]); 
+  lerpColors255(outputColor, lowColor, highColor, rotVal);
 }
 
 // Fade from red to blue to green based on rotational speed
@@ -660,7 +671,7 @@ void redToBlueFade(int time,int redPin,int bluePin) {
 // ==============================================
 // FADE OVER TIME FEATURE
 // ==============================================
-byte* timeFade(byte* startColor, byte* endColor, int duration) {
+void timeFade(byte *outputColor, byte* startColor, byte* endColor, int duration) {
   byte progress; // change to int if this gets buggy
   if (!fadeIsInProgress) {
     fadeStartTime = millis();
@@ -675,7 +686,7 @@ byte* timeFade(byte* startColor, byte* endColor, int duration) {
     fadeIsInProgress = false;
     progress = 255;
   }
-  return lerpColors255(startColor, endColor, progress);
+  lerpColors255(outputColor, startColor, endColor, progress);
 }
 
 
@@ -712,10 +723,10 @@ byte* timeFade(byte* startColor, byte* endColor, int duration) {
  *
  * TODO: maybe have it accept a light output function as a parameter?
  */
-byte* lightCycle(byte* startColor, byte* endColor) {
+void lightCycle(byte *outputColor, byte *startColor, byte *endColor) {
 
   // Detecting the start of a throw
-  if (accelIsPlunging(0.33) && !freeFalling) { 
+  if (accelIsPlunging(0.7) && !freeFalling) { 
     freeFalling = true;
     throwStartTime = millis() % 100000;  // millis() is the current time since program start in milliseconds. Taken mod 100,000 to prevent [unlikely] overflow.
     Serial.println("Free fall started!"); // for debugging purposes
@@ -732,21 +743,20 @@ byte* lightCycle(byte* startColor, byte* endColor) {
     // Note: 0 <= cycleProgress <= 1
 
     // === Linear Fading ====
-    return lerpColors(startColor, endColor, cycleProgress);
+    lerpColors(outputColor, startColor, endColor, cycleProgress);
 
     // === Parabolic Fading ====
     // fadeRedBlueParabolically(cycleProgress, 0.6, 0.4);
   }  
-  else
-    return (startColor);
 
   // Detecting the end of a throw   
   // If it is no longer in free fall and we haven't set freeFalling back to false yet, set it to false, and set throwEndTime and lastThrowDuration.
   // Potential issue: is the minimum accel threshold for !isFreeFalling() too low? 
   // Do we need a isStronglyAccelerating() function with a higher minimum threshold instead of !isFreeFalling()?
-  if (freeFalling && accelIsSpiking(3.0)) {
+  if (freeFalling && accelIsSpiking(1.5)) {
     freeFalling = false;
     throwEndTime = millis() % 100000;
+    outputColor = startColor;
     int duration = throwEndTime - throwStartTime;
     if (duration > 10)
       lastThrowDuration = (duration > 32000) ? 32000 : duration;
@@ -765,12 +775,12 @@ byte* lightCycle(byte* startColor, byte* endColor) {
  * it to an int between 0 and 255 so that it is visible.
  * Currently buggy. MPU doesn't seem to work properly.
  */
-byte* sensorTemperatureFade(byte* lowColor, byte* highColor, int rangeMin, int rangeHigh) {
+void sensorTemperatureFade(byte *outputColor, byte *lowColor, byte *highColor, int rangeMin, int rangeHigh) {
   double sensorTemp = ((double)mpu.getTemperature() + 12412.0) / 340.0;
   int sensorTempInt = (int)sensorTemp;
   sensorTempInt = constrain(sensorTempInt, rangeMin, rangeHigh); // to make sure it doesn't mess up the linear mapping
   int tempLerpAmt = map(sensorTempInt, rangeMin, rangeHigh, 0, 255);
-  return lerpColors(lowColor, highColor, tempLerpAmt);
+  lerpColors(outputColor, lowColor, highColor, tempLerpAmt);
 }
 
 // Juan's version - TODO: reconcile/combine with the above and add to mode choices
@@ -795,7 +805,7 @@ void setColorOnTemperature(int temp){
  * compares to rangeMin and rangeHigh.
  * The Processing app currently sends temperatures in Fahrenheit.
  */
-byte* webTemperatureFade(byte* lowColor, byte* highColor, int rangeMin, int rangeHigh) {
+void webTemperatureFade(byte *outputColor, byte *lowColor, byte *highColor, int rangeMin, int rangeHigh) {
   numLoops++;
   if (numLoops % 100 == 0) { // read and change only 1x per 100 loops
     Serial1.println("Getting Temperature");
@@ -803,9 +813,8 @@ byte* webTemperatureFade(byte* lowColor, byte* highColor, int rangeMin, int rang
     int webTemp = computerString.toInt();
     webTemp = constrain(webTemp, rangeMin, rangeHigh); // to make sure it doesn't mess up the linear mapping
     int tempLerpAmt = map(webTemp, rangeMin, rangeHigh, 0, 255);
-    return lerpColors(lowColor, highColor, tempLerpAmt);
+    lerpColors(outputColor, lowColor, highColor, tempLerpAmt);
   }
-  return currentColor; // no change
 }
 
 // ==============================================
@@ -840,12 +849,13 @@ void rapidFlashing(int time) {
 /*
  * Changes color according to the current orientation of the ball.
  */
-byte* gravityGlow() {
+void gravityGlow(byte *outputColor) {
   mpu.dmpGetQuaternion(&q, fifoBuffer);
   mpu.dmpGetGravity(&gravity, &q);
   //byte outputColor[] = {(byte) 127*(1+gravity.x),(byte) 127*(1+gravity.y),(byte) 127*(1+gravity.z)}
-  byte outputColor[] = {(byte) 255*(1-abs(gravity.x)),(byte) 255*(1-abs(gravity.y)),(byte) 255*(1-abs(gravity.z))};
-  return outputColor;
+  outputColor[0] = (byte) 255*(1-abs(gravity.x));
+  outputColor[1] = (byte) 255*(1-abs(gravity.y));
+  outputColor[2] = (byte) 255*(1-abs(gravity.z));
 }
 
 
@@ -972,7 +982,7 @@ boolean checkForEscape() {
  * Gets RGB values from the user via the Serial and alters
  * the light accordingly.
  */
-byte* userLightInput() {
+void userLightInput(byte *outputColor) {
   // Receives information from computer
   receiveStringFromComputer();
 
@@ -1008,12 +1018,12 @@ byte* userLightInput() {
         }
       }
     }
-    byte outputColor[] = {red, green, blue};
-    return outputColor;
+    outputColor[0] = red;
+    outputColor[1] = green;
+    outputColor[2] = blue;
+    
   }
-  else {
-    return currentColor;
-  }
+
 }
 
 
@@ -1033,29 +1043,36 @@ void changeModeLight(int mode) {
 
 /*
  * Linearly interpolates ("lerps") between color1 and color2 according to amt, which ranges from 0.0 to 1.0.
- * So lerpColors(color1, color2, 0.0) returns color1, lerpColors(color1, color2, 1.0) returns color2, etc.
+ * In other words, it blends color1 and color2 into outputColor, where amt determines how much of each to use.
+ * So lerpColors(outputColor, color1, color2, 0.0) sets outputColor to color1, 
+ * lerpColors(outputColor, color1, color2, 1.0) sets outputColor to color2,
+ * lerpColors(outputColor, color1, color2, 0.3) sets outputColor to something close to color1, etc.
  * Precondition: 0.0<=amt<=1.0
  */
-byte* lerpColors(byte* color1, byte* color2, float amt) {
+void lerpColors(byte *outputColor, byte *color1, byte *color2, float amt) {
   byte redByte = (byte) (color1[0] * (1.0 - amt) + color2[0] * amt);
   byte greenByte = (byte) (color1[1] * (1.0 - amt) + color2[1] * amt);
   byte blueByte = (byte) (color1[2] * (1.0 - amt) + color2[2] * amt);
-  byte lerpedColor[] = {redByte, greenByte, blueByte};
-  return lerpedColor;
+  outputColor[0] = redByte;
+  outputColor[1] = greenByte;
+  outputColor[2] = blueByte;
 }
 
 /*
  * Linearly interpolates ("lerps") between color1 and color2 according to amt, which ranges from 0 to 255.
- * So lerpColors(color1, color2, 0) returns color1, lerpColors(color1, color2, 255) returns color2, 
- * and lerpColors(color1, color2, 128) returns somewhere in between, etc.
+  * In other words, it blends color1 and color2 into outputColor, where amt determines how much of each to use.
+ * So lerpColors(outputColor, color1, color2, 0) sets outputColor to color1, 
+ * lerpColors(outputColor, color1, color2, 255) sets outputColor to color2,
+ * lerpColors(outputColor, color1, color2, 128) sets outputColor to a balanced blend, etc.
  * Precondition: 0<=amt<=255
  */
-byte* lerpColors255(byte* color1, byte* color2, byte amt) {
+void lerpColors255(byte *outputColor, byte *color1, byte *color2, byte amt) {
   byte redByte = (color1[0] * (255 - amt) + color2[0] * amt)/255;
   byte greenByte = (color1[1] * (255 - amt) + color2[1] * amt)/255;
   byte blueByte = (color1[2] * (255 - amt) + color2[2] * amt)/255;
-  byte lerpedColor[] = {redByte, greenByte, blueByte};
-  return lerpedColor;
+  outputColor[0] = redByte;
+  outputColor[1] = greenByte;
+  outputColor[2] = blueByte;
 }
 
 /**
@@ -1116,7 +1133,7 @@ int color(char color) {
  */
 void setColor(int* led, int* color){
   for(int i = 0; i < 3; i++){
-    analogWrite(led[i], 255-color[i]); //note: a low output turns the led on
+    analogWrite(led[i], color[i]); //note: a low output turns the led on
   }
 }
 
@@ -1125,7 +1142,7 @@ void setColor(int* led, int* color){
  */
 void setColor(int* led, byte* color){
   for(int i = 0; i< 3; i++){
-    analogWrite(led[i], 255-color[i]);  
+    analogWrite(led[i], color[i]);  
   }
 }
 
@@ -1293,7 +1310,7 @@ boolean isFreeFalling() {
  * TODO: Re-implement as a pair of queues to clean up all the % syntax? (functionally identical)
  */
 void updateAccelHistory() {
-  int accelToInsert = getLinearAccelerationMagnitude(); // current acceleration
+  int accelToInsert = constrain(getLinearAccelerationMagnitude(), 0, 32000); // current acceleration
   int accelToRemove = accelHistory[historyIndex]; // acceleration we're replacing in the history array (historyIndex is the index of the spot in the array to update)
   int midIndex = (historyIndex+historyLength/2) % historyLength;
   int midAccel = accelHistory[midIndex]; // acceleration that was part of recentAvgAccel and is now becoming part of olderAvgAccel
@@ -1302,29 +1319,10 @@ void updateAccelHistory() {
   accelHistory[historyIndex] = accelToInsert;
   historyIndex = (historyIndex + 1) % historyLength; // % operation used to make it cycle from 0 to historyLength-1
 
-  //   Serial.print("recentAvgAccel:");
-  //   Serial.print("\t");
-  //   Serial.print(recentAvgAccel);
-  //   Serial.print("\t");
-  //   Serial.print("olderAvgAccel:");
-  //   Serial.print("\t");
-  //   Serial.print(olderAvgAccel);
-  //   Serial.print("\t");
-  //   Serial.print("currentAccel:");
-  //   Serial.print("\t");
-  //   Serial.print(accelToInsert);
-  //   Serial.print("\t");
-  //   Serial.print("midAccel:");
-  //   Serial.print("\t");
-  //   Serial.print(midAccel);
-  //   Serial.print("\t");
-  //   Serial.print("midIndex:");
-  //   Serial.print("\t");
-  //   Serial.print(midIndex);
-  //   Serial.print("\t");
-  //   Serial.print("accelToRemove:");
-  //   Serial.print("\t");
-  //   Serial.println(accelToRemove);
+// For testing purposes:
+//   Serial.print("multiplyingFactor:");
+//   Serial.print("\t");
+//   Serial.println(1.0*recentAvgAccel/olderAvgAccel);
 }
 
 /*
@@ -1342,6 +1340,5 @@ boolean accelIsSpiking(float thresholdPercentage) {
 boolean accelIsPlunging(float thresholdPercentage) {
   return (recentAvgAccel < olderAvgAccel*thresholdPercentage);
 }
-
 
 
