@@ -1,0 +1,69 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>point2line : : Vect2 : : angle ( )</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body> 
+<center>
+<table width="600" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td height="100" valign="top" class="header"><span class="libName">point2line</span><br>
+        <a href="index.htm">index</a></td>
+    <td width="450" class="descList">&nbsp;</td>
+  </tr>
+  <tr>
+    <td valign="top" class="mainTextName">Name</td>
+    <td class="methodName">angle ( )</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Description</td>
+    <td valign=top class="descList">Returns the angle of the vector in radians. All rotations are based on 
+ the unit circle where angle 0 and PI*2 is 3 o'clock.</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Syntax</td>
+    <td valign=top class="descList"><pre>angle();
+</pre></td>
+  </tr>
+  
+  
+     <tr>
+       <td valign=top class="mainText">Returns</td>
+       <td class="descList">angle of this vector in radians (<code>float</code>)</td>
+     </tr>
+   
+  <tr>
+    <td valign=top class="mainText">Usage</td>
+    <td class="descList">Web & Application</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Related</td>
+    <td class="descList"></td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Examples</td>
+    <td valign=top class="descList"><pre><code>import point2line.*;
+
+Vect2 right = new Vect2( 1, 0 );
+Vect2 down  = new Vect2( 0, 1 );
+Vect2 left  = new Vect2( -1, 0 );
+Vect2 up    = new Vect2( 0, -1 );
+
+println( degrees( right.angle() ) ); // prints "0.0"
+println( degrees( down.angle() ) );  // prints "90.0"
+println( degrees( left.angle() ) );  // prints "180.0"
+println( degrees( up.angle() ) );    // prints "270.0"
+
+</code></pre></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td class="descList">&nbsp;</td>
+  </tr>
+</table>
+</center>
+</body>
+</html>

@@ -12,31 +12,29 @@ int showLength = 100;
 
 boolean animating = false;
 int frame;
-int lastKeyframeIndex;
+int lastKeyframeIndices[] = new int[3];
  
 int redBoxX = 20;
 int redBoxY = 300;
 int boxWidth = 200;
-int boxHeight = 200;
+int boxHeight = 100;
 boolean isClicking = false;
 boolean draggingKeyframe = false;
 Keyframe selectedKeyframe;
 int selectedKeyframeIndex;
-ArrayList<Keyframe> redKeyframes; // stores keyframes in ascending x order
-
-//ArrayList<Keyframe> greenKeyframes;
-//ArrayList<Keyframe> blueKeyframes;
+int selectedBoxIndex;
+KeyframeBox[] keyframeBoxes;
 
 void setup() {  
   size(360, 640);
   colorMode(RGB, 255);
   noStroke();
   background(255, 255, 255);
-  
-  redKeyframes = new ArrayList<Keyframe>();
-  redKeyframes.add(new Keyframe(0, 255, redBoxX, redBoxY));
-  redKeyframes.add(new Keyframe(showLength, 255, redBoxX+boxWidth, redBoxY));
-  
+  keyframeBoxes =  new KeyframeBox[3];
+  keyframeBoxes[0] = new KeyframeBox(20, 300, boxWidth, boxHeight, showLength, color(255, 0, 0));
+  keyframeBoxes[1] = new KeyframeBox(20, 410, boxWidth, boxHeight, showLength, color(0, 255, 0));
+  keyframeBoxes[2] = new KeyframeBox(20, 520, boxWidth, boxHeight, showLength, color(0, 0, 255)); 
+                   
   cp5 = new ControlP5(this);
   instructionsLabel = cp5.addTextlabel("label")
     .setText("LIGHT SHOW (currently only available in red)\n*Click anywhere in the black box to create a new\nkeyframe\n*Keyframes can be clicked and dragged to change\nthe animation\n*Delete or Backspace will erase the highlighted\nkeyframe\n*Click PLAY! to test the show")
@@ -73,13 +71,20 @@ void draw() {
     animate();
     
   fill(10, 10, 10);
-  rect(redBoxX, redBoxY, boxWidth, boxHeight);
+  for (int i=0; i<3; i++) {
+    KeyframeBox kfBox = keyframeBoxes[i];
+    rect(kfBox.x, kfBox.y, kfBox.boxWidth, kfBox.boxHeight);
+  }
   
   // time ticker
   if (animating) {
     stroke(255); 
-    line(timeToX(frame), redBoxY, timeToX(frame), redBoxY+boxHeight);
+    for (int i=0; i<3; i++) {
+      KeyframeBox kfBox = keyframeBoxes[i];
+      line(timeToX(frame, kfBox), kfBox.y, timeToX(frame, kfBox), kfBox.y+kfBox.boxHeight);
+    }
   }
+
   
   // Deleting keyframes
   if (keyPressed) {
@@ -87,82 +92,84 @@ void draw() {
       if (selectedKeyframe != null) {
         draggingKeyframe = false;
         selectedKeyframe = null; 
-        redKeyframes.remove(selectedKeyframeIndex); 
+        keyframeBoxes[selectedBoxIndex].keyframes.remove(selectedKeyframeIndex); 
         animating = false; // to prevent outOfBoundsExceptions, for now
       }
     }
   }
   
-  // Draw leftmost keyframe
-  Keyframe leftKf = redKeyframes.get(0);
-  leftKf.display();
-  
-  // Draw and/or manipulate each successive keyframe
-  for (int i = 1; i < redKeyframes.size(); i++) {
-     Keyframe rightKf = redKeyframes.get(i);
-    // if this keyframe is to the left of previous, swap them in the arraylist!
-    if (rightKf.x < leftKf.x) {
-      redKeyframes.remove(i-1);
-      redKeyframes.add(i, leftKf);
-      if (selectedKeyframeIndex == i-1)
-        selectedKeyframeIndex++;
-      else if (selectedKeyframeIndex == i)
-        selectedKeyframeIndex--;
-    }
+  for (int b = 0; b < 3; b++) {
+    // Draw leftmost keyframe
+    Keyframe leftKf = keyframeBoxes[b].keyframes.get(0);
+    leftKf.display();
     
-    // Clicked on an existing keyframe in the middle -> select it
-    // The !draggingKeyframe part is to prevent selecting many at once as you drag the cursor around
-    if (mousePressed && dist(mouseX, mouseY, rightKf.x, rightKf.y) < rightKf.w && i < redKeyframes.size() - 1 && !draggingKeyframe) {
-        rightKf.select();
-        draggingKeyframe = true;
-        if (selectedKeyframe != null)
-          selectedKeyframe.deselect();
-        selectedKeyframe = rightKf;
-        selectedKeyframeIndex = i;
-    }
-    
-    if (rightKf.beingDragged) {
-      // Check if the mouse is in the box for keyframes 
-      if (mouseInRedBox()) {
-            rightKf.x = mouseX;
-            rightKf.y = mouseY;
-            rightKf.time = xToTime(mouseX);
-            rightKf.value = yToValue(mouseY);
-        }
-        else { // Stop dragging it!
-          rightKf.stopDragging();
-          draggingKeyframe = false;
-        }
-    }
-   
-    stroke(255,0,0);
-    line(leftKf.x, leftKf.y, rightKf.x, rightKf.y); // Draw line between this keyframe and the previous
-    rightKf.display();
-    leftKf = rightKf; // So drawing the lines works right
-    
-  }
-  
-  // Clicked in the box but not on a keyframe -> create and select a new keyframe
-  if (mousePressed && !draggingKeyframe && mouseInRedBox()) {
-    Keyframe newKeyframe = new Keyframe(xToTime(mouseX), yToValue(mouseY), mouseX, mouseY);
-    newKeyframe.select();
-    draggingKeyframe = true;
-    if (selectedKeyframe != null)
-      selectedKeyframe.deselect();
-    selectedKeyframe = newKeyframe;
-    //animating = false; to prevent outOfBoundsExceptions, for now
- 
-    // Find its proper index according to its x position
-    for (int i = 1; i < redKeyframes.size(); i++) {
-       Keyframe kf = redKeyframes.get(i);
-       if (kf.x > newKeyframe.x) {
-          redKeyframes.add(i, newKeyframe);
+    // Draw and/or manipulate each successive keyframe
+    for (int i = 1; i < keyframeBoxes[b].keyframes.size(); i++) {
+       Keyframe rightKf = keyframeBoxes[b].keyframes.get(i);
+      // if this keyframe is to the left of previous, swap them in the arraylist!
+      if (rightKf.x < leftKf.x) {
+        keyframeBoxes[b].keyframes.remove(i-1);
+        keyframeBoxes[b].keyframes.add(i, leftKf);
+        if (selectedBoxIndex == b && selectedKeyframeIndex == i-1)
+          selectedKeyframeIndex++;
+        else if (selectedBoxIndex == b && selectedKeyframeIndex == i)
+          selectedKeyframeIndex--;
+      }
+      
+      // Clicked on an existing keyframe in the middle -> select it
+      // The !draggingKeyframe part is to prevent selecting many at once as you drag the cursor around
+      if (mousePressed && dist(mouseX, mouseY, rightKf.x, rightKf.y) < rightKf.w && i < keyframeBoxes[b].keyframes.size() - 1 && !draggingKeyframe) {
+          rightKf.select();
+          draggingKeyframe = true;
+          if (selectedKeyframe != null)
+            selectedKeyframe.deselect();
+          selectedKeyframe = rightKf;
           selectedKeyframeIndex = i;
-          break; 
-       }
+          selectedBoxIndex = b;
+      }
+      
+      if (rightKf.beingDragged) {
+        // Check if the mouse is in the box for keyframes 
+        if (mouseInBox(keyframeBoxes[b])) {
+              rightKf.x = mouseX;
+              rightKf.y = mouseY;
+              rightKf.time = xToTime(mouseX, keyframeBoxes[b]);
+              rightKf.value = yToValue(mouseY, keyframeBoxes[b]);
+          }
+          else { // Stop dragging it!
+            rightKf.stopDragging();
+            draggingKeyframe = false;
+          }
+      }
+     
+      stroke(keyframeBoxes[b].keyframeColor);
+      line(leftKf.x, leftKf.y, rightKf.x, rightKf.y); // Draw line between this keyframe and the previous
+      rightKf.display();
+      leftKf = rightKf; // So drawing the lines works right
+      
     }
-  } 
-  
+    // Clicked in the box but not on a keyframe -> create and select a new keyframe
+    if (mousePressed && !draggingKeyframe && mouseInBox(keyframeBoxes[b])) {
+      Keyframe newKeyframe = new Keyframe(xToTime(mouseX, keyframeBoxes[b]), yToValue(mouseY, keyframeBoxes[b]), mouseX, mouseY, keyframeBoxes[b].keyframeColor);
+      newKeyframe.select();
+      draggingKeyframe = true;
+      if (selectedKeyframe != null)
+        selectedKeyframe.deselect();
+      selectedKeyframe = newKeyframe;
+      //animating = false; to prevent outOfBoundsExceptions, for now
+   
+      // Find its proper index according to its x position
+      for (int i = 1; i < keyframeBoxes[b].keyframes.size(); i++) {
+         Keyframe kf = keyframeBoxes[b].keyframes.get(i);
+         if (kf.x > newKeyframe.x) {
+            keyframeBoxes[b].keyframes.add(i, newKeyframe);
+            selectedKeyframeIndex = i;
+            selectedBoxIndex = b;
+            break; 
+         }
+      }
+  }
+  }
   // Letting go of keyframes
   if (!mousePressed && draggingKeyframe) {
     draggingKeyframe = false;
@@ -175,7 +182,9 @@ void draw() {
 public void playAnimation(int value) {
   animating = true;
   frame = 0;
-  lastKeyframeIndex = 0;
+  lastKeyframeIndices[0] = 0;
+  lastKeyframeIndices[1] = 0;
+  lastKeyframeIndices[2] = 0;
 }
 
 // called when "Stop" button pressed
@@ -187,57 +196,55 @@ public void stopAnimation(int value) {
 void slider(int theDuration) {
   showLength = theDuration;
   animating = false; // to prevent outOfBoundsExceptions, for now
-  for (int i=0; i < redKeyframes.size(); i++) {
-     Keyframe kf = redKeyframes.get(i);
-     kf.time = xToTime(kf.x);
+  for (int b=0; b < 3; b++) {
+    for (int i=0; i < keyframeBoxes[b].keyframes.size(); i++) {
+       Keyframe kf = keyframeBoxes[b].keyframes.get(i);
+       kf.time = xToTime(kf.x, keyframeBoxes[b]);
+    }
   }
 }
 
 void animate() {
-  Keyframe lastKeyframe = redKeyframes.get(lastKeyframeIndex);
-  Keyframe nextKeyframe = redKeyframes.get(lastKeyframeIndex+1);
-  int duration = nextKeyframe.time-lastKeyframe.time;
-  int timeSinceLast = frame - lastKeyframe.time;
-  float progress = ((float)timeSinceLast)/duration;
-  int r = (int) lerp(lastKeyframe.value, nextKeyframe.value, progress); 
-  
-  while (lastKeyframeIndex < redKeyframes.size() - 1  && frame > redKeyframes.get(lastKeyframeIndex+1).time) {
-    lastKeyframeIndex++;
+  int rgb[] = new int[3];
+  for (int b = 0; b < 3; b++) {
+    Keyframe lastKeyframe = keyframeBoxes[b].keyframes.get(lastKeyframeIndices[b]);
+    Keyframe nextKeyframe = keyframeBoxes[b].keyframes.get(lastKeyframeIndices[b]+1);
+    int duration = nextKeyframe.time-lastKeyframe.time;
+    int timeSinceLast = frame - lastKeyframe.time;
+    float progress = ((float)timeSinceLast)/duration;
+    rgb[b] = (int) lerp(lastKeyframe.value, nextKeyframe.value, progress); 
+    
+    while (lastKeyframeIndices[b] < keyframeBoxes[b].keyframes.size() - 1  && frame > keyframeBoxes[b].keyframes.get(lastKeyframeIndices[b]+1).time) {
+      lastKeyframeIndices[b]++;
+    }
   }
   
-  background(r, 0, 0);
+  background(rgb[0], rgb[1], rgb[2]);
   frame++;
   if (frame >= showLength) {
     frame = 0;
-    lastKeyframeIndex = 0;
+    lastKeyframeIndices[0] = 0;
+    lastKeyframeIndices[1] = 0;
+    lastKeyframeIndices[2] = 0;
   }
 }
 
-int xToTime(float x) {
-   return (int) ((x - redBoxX) / boxWidth * showLength);
+int xToTime(float x, KeyframeBox kfBox) {
+   return (int) ((x - kfBox.x) /  kfBox.boxWidth * showLength);
 }
 
-int yToValue(float y) {
-   return (int) ((redBoxY + boxHeight - y) / boxHeight * 255);
+int yToValue(float y, KeyframeBox kfBox) {
+   return (int) ((kfBox.y + kfBox.boxHeight - y) / kfBox.boxHeight * 255);
 }
 
-float timeToX(int time) {
-   return redBoxX + boxWidth * ((float) time)/showLength;
+float timeToX(int time, KeyframeBox kfBox) {
+   return kfBox.x + kfBox.boxWidth * ((float) time)/showLength;
 }
 
-float valueToY(int value) {
-   return redBoxY + boxHeight * (1- ((float) value)/255);
+float valueToY(int value, KeyframeBox kfBox) {
+   return kfBox.y + kfBox.boxHeight * (1- ((float) value)/255);
 }
 
-boolean mouseInRedBox() {
-  return mouseInRedBoxX() && mouseInRedBoxY();
+boolean mouseInBox(KeyframeBox kfBox) {
+  return mouseX > kfBox.x && mouseX < kfBox.x + kfBox.boxWidth && mouseY > kfBox.y && mouseY < kfBox.y + kfBox.boxHeight;
 }
-
-boolean mouseInRedBoxX() {
-  return mouseX > redBoxX && mouseX < redBoxX + boxWidth;
-}
-
-boolean mouseInRedBoxY() {
-  return mouseY > redBoxY && mouseY < redBoxY + boxHeight;
-}
-

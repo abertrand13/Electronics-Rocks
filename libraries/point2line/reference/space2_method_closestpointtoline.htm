@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>point2line : : Space2 : : closestPointToLine ( )</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body> 
+<center>
+<table width="600" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td height="100" valign="top" class="header"><span class="libName">point2line</span><br>
+        <a href="index.htm">index</a></td>
+    <td width="450" class="descList">&nbsp;</td>
+  </tr>
+  <tr>
+    <td valign="top" class="mainTextName">Name</td>
+    <td class="methodName">closestPointToLine ( )</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Description</td>
+    <td valign=top class="descList">Finds the closest point on a continuous line from an array of points.
+ <br>
+ Credits for the algorithm goes to softsurfer.com.</br>
+ http://softsurfer.com/Archive/algorithm_0102/algorithm_0102.htm#closest2D_Point_to_Line()</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Syntax</td>
+    <td valign=top class="descList"><pre>closestPointToLine(points, linePointA, linePointB);
+</pre></td>
+  </tr>
+  
+     <tr>
+       <td class="mainText">Parameters</td>
+       <td valign=top class="descList">
+         <table border=0 cellspacing=0 cellpadding=0>
+           
+      <tr>
+        <td width="70" valign=top>points</td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>(<code>Vect2[]</code>)</td>
+	  </tr>
+    
+      <tr>
+        <td width="70" valign=top>linePointA</td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>(<code>Vect2</code>)</td>
+	  </tr>
+    
+      <tr>
+        <td width="70" valign=top>linePointB</td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>(<code>Vect2</code>)</td>
+	  </tr>
+    
+         </table>
+	   </td>
+	 </tr>
+   
+  
+     <tr>
+       <td valign=top class="mainText">Returns</td>
+       <td class="descList">index of the closest point to the line (<code>int</code>)</td>
+     </tr>
+   
+  <tr>
+    <td valign=top class="mainText">Usage</td>
+    <td class="descList">Web & Application</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Related</td>
+    <td class="descList"></td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Examples</td>
+    <td valign=top class="descList"><pre><code>import point2line.*;
+
+Vect2 linePoint1 = new Vect2( 0, 0 );
+Vect2 linePoint2 = new Vect2( 100, 100 );
+Vect2[] testPoints = new Vect2[ 100 ];
+for( int i=0; i&lt;testPoints.length; i++ ){
+  testPoints[ i ] = new Vect2( random( 100 ), random( 100 ) );
+}
+
+int closetPointIndex = Space2.closestPointToLine( testPoints, linePoint1, linePoint2 );
+
+println( testPoints[ closetPointIndex ] );
+</code></pre></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td class="descList">&nbsp;</td>
+  </tr>
+</table>
+</center>
+</body>
+</html>

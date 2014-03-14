@@ -1,0 +1,409 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>point2line : : Vect2</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body> 
+<center>
+<table width="600" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td class="header">
+	  <span class="libName">point2line</span>
+	  <a href="index.htm" style="colored">index</a></td>
+    <td class="descList"></td>
+  </tr>
+  <tr>
+    <td valign="top" class="mainTextName">Name</td>
+    <td class="methodName">Vect2</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Description</td>
+    <td valign=top class="descList">Vect2 is a class for storing and manipulating vectors and positions in 2D.<br/>
+ <br>
+ <p><b>WHY ANOTHER VECTOR CLASS?</b></p>
+ There are a great number of open source vector classes available that does 
+ practically the same, so choosing a vector class for consistent use is mostly 
+ about taste. Processing already has the build-in PVector class by 
+ <a href="http://shiffman.net/">Daniel Shiffman</a>.
+ The main arguments for using Vect2 are:<br/>
+ <ul>
+ 		<li>Additional commonly used methods</li>
+ 		<li>Optimized convenience methods</li>
+ 		<li>Method chaining</li>
+ </ul>
+ Also, PVector is made for both 2D and 3D purposes which makes Vect2 slightly faster 
+ when working in 2D. I have chosen meaningful naming in favor of short keywords, 
+ making it more attractive for non-programmers.<br>
+ <br/>
+ 
+ <p><b>ABOUT METHOD CHAINING</b></p>
+ The methods that are named in past tense (<code>eg. added(), flipped()</code>) all return 
+ a copy of the vector, leaving the original untouched. These are all convenience methods
+ that allow to make series of methods calls in one line. Example:<br/>
+ <code>Vect2 force = pos1.subtracted(pos2).normalized.scaled(maxForce);</code><br/>
+ <br/>
+ 
+ <p><b>LICENCE</b></p>
+ Vect2 is part of the point2line library. The library is free software; you can redistribute it 
+ and/or modify it for any desirable purpose. It is distributed in the hope that 
+ it will be useful, but without any warranty.<br>
+ <br/>
+ 
+ <p><b>AUTHORS</b></p>
+ Vect2 is maintained and updated by 
+ <a href="http://sixthsensor.dk/">Carl Emil Carlsen</a> 
+ in dialog with 
+ <a href="http://stimulacrum.com/">Daniel Hoeier Oehrgaard</a> 2005+ <br/>
+ <br/></td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Constructors</td>
+    <td valign=top class="descList"><pre>Vect2();
+Vect2(x, y);
+Vect2(vector);
+Vect2(angle);
+</pre></td>
+  </tr>
+  
+     <tr>
+       <td class="mainText">Parameters</td>
+       <td valign=top class="descList">
+         <table border=0 cellspacing=0 cellpadding=0>
+           
+      <tr>
+        <td width="70" valign=top>x,y</td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>components of new vector (<code>float,float</code>)</td>
+	  </tr>
+    
+      <tr>
+        <td width="70" valign=top>vector</td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>to copy into new vector (<code>Vect2</code>)</td>
+	  </tr>
+    
+      <tr>
+        <td width="70" valign=top>angle</td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>in radians to set the rotation of new unit vector (<code>float</code>)</td>
+	  </tr>
+    
+         </table>
+	   </td>
+	 </tr>
+   
+  
+     <tr>
+       <td class="mainText">Fields</td>
+       <td valign=top class="descList">
+         <table border=0 cellspacing=0 cellpadding=0>
+           
+      <tr>
+        <td width="120" valign=top><a href="vect2_field_x.htm">x</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>The x component of the vector<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_field_y.htm">y</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>The y component of the vector<BR><BR></td>
+	  </tr>
+    
+         </table>
+	   </td>
+	 </tr>
+   
+  
+     <tr>
+       <td class="mainText">Methods</td>
+       <td valign=top class="descList">
+         <table border=0 cellspacing=0 cellpadding=0>
+           
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_add.htm">add ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Adds an input vector to the vector and stores the result.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_added.htm">added ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Adds an input vector to the vector and returns the result.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_angle.htm">angle ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns the angle of the vector.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_anglebetween.htm">angleBetween ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns the angle between two vectors (always positive).<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_anglebetweenunits.htm">angleBetweenUnits ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns the angle between two unit vectors (always positive).<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_anglefromto.htm">angleFromTo ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns the angle between two unit vectors.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_clip.htm">clip ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Clips the magnitude of the vector.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_clipped.htm">clipped ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns a copy of the vector that has been clipped.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_clone.htm">clone ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns a clone of the vector.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_copy.htm">copy ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns a copy of the vector (DEPRECIATED).<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_distance.htm">distance ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns the  distance between to positions.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_divide.htm">divide ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Divides the vector by a divider and stores the result.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_divided.htm">divided ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Divides the vector by a divider and returns the result.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_dot.htm">dot ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns the dot product of this vector and another.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_equals.htm">equals ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns <code>true</code> if the vector is equals another vector<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_flip.htm">flip ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Flips the vector 180 degrees.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_flipped.htm">flipped ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns a copy that has been flipped.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_isalmostzero.htm">isAlmostZero ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns <code>true</code> if the vector is almost zero.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_isgreaterthan.htm">isGreaterThan ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns <code>true</code> if the vector is longer than a specific magnitude.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_islessthan.htm">isLessThan ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns <code>true</code> if the vector is shorter than a specific magnitude.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_iszero.htm">isZero ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns <code>true</code> if the vector is zero.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_lerp.htm">lerp ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns the linear interpolation between two vectors.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_magnitude.htm">magnitude ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns the magnitude of the vector, also referred to as the length.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_midpoint.htm">midpoint ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns the midpoint between two given vector points.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_normalize.htm">normalize ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Normalizes the vector.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_normalized.htm">normalized ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns a copy that has been normalized.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_rotate.htm">rotate ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Rotates the vector clockwise by a a delta angle.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_rotatearound.htm">rotateAround ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Rotates the position clockwise around another position by a a delta angle.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_rotateleft.htm">rotateLeft ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Rotates the vector 90 degrees left.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_rotateright.htm">rotateRight ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Rotates the vector 90 degrees right.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_rotated.htm">rotated ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns copy that has been rotated clockwise by a delta angle.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_rotatedaround.htm">rotatedAround ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Rotates the position clockwise around another position by a a delta angle.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_rotatedleft.htm">rotatedLeft ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns a copy that has been rotated 90 degrees counter clockwise.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_rotatedright.htm">rotatedRight ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns a copy that has been rotated 90 degrees clockwise.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_scale.htm">scale ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Multiplies the vector by an input value and stores the result.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_scaled.htm">scaled ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Multiplies the vector by an input value and returns the result.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_set.htm">set ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Sets the vector by copying.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_setmagnitude.htm">setMagnitude ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Sets the magnitude (length) of the vector.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_setrotation.htm">setRotation ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Sets the rotation of the vector.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_setzero.htm">setZero ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Sets the vector to zero (<code>0,0</code>).<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_squaremagnitude.htm">squareMagnitude ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns the square magnitude of the vector.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_subtract.htm">subtract ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Subtracts an input from the vector and stores the result.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_subtracted.htm">subtracted ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Subtracts and input vector from the vector and returns the result.<BR><BR></td>
+	  </tr>
+    
+      <tr>
+        <td width="120" valign=top><a href="vect2_method_tostring.htm">toString ( )</a></td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>Returns a string containing the (<code>x,y</code>) components of this vector.<BR><BR></td>
+	  </tr>
+    
+         </table>
+	   </td>
+	 </tr>
+   
+  <tr>
+    <td valign=top class="mainText">Usage</td>
+    <td class="descList">Web & Application</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Related</td>
+    <td class="descList"></td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Examples</td>
+    <td valign=top class="descList"><pre><code>None available</code></pre></td>
+  </tr>
+</table>
+</center>
+</body>
+</html>

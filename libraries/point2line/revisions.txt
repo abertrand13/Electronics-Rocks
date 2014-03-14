@@ -1,0 +1,103 @@
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+
+REV 06 - 23 Juli 2013
+
+
+[ general ] 
+
++ updated library for Processing 2.
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+
+REV 05 - 11 December 2009
+
+
+[ general Vect2 ] 
+
++ added clone() using the Cloneable interface. copy() is now depreciated.
+
++ added rotateAround() and rotatedAround().
+
++ added angleFromTo().
+
++ added midpoint().
+
+[ general Space2 ] 
+
++ added closestPointOnLine() and closestPointOnLineSegment().
+
++ added closestPointToLine().
+
++ renamed LineIntersection() to LineSegmentIntersection().
+
++ added LineIntersection().
+
++ optimized insidePolygon().
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+
+REV 04 - 4 January 2009
+
+
+[ general ] 
+
++ changed name of library from ce_geometry to point2line. this is done
+  to isolate the package from the rest of my personal code and ease
+  the pain of updating the library.
+
++ changed the location of all files from:
+  http://sixthsensor/processing/ce/geometry/
+  to:
+  http://sixthsensor/p5/point2line/
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+
+REV 03 - 3 January 2009
+
+
+[ general ] 
+
++ added new examples to the documentation.
+
++ fine tuned isAlmostZero() for pixel position checks.
+
++ removed the undocumented randomDirection() method. instead call the
+  constructor like this: new Vect2( random( TWO_PI ) ).
+
+[ bug fixes ] 
+
++ fixed bug in equals().
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+
+REV 02 - 9 December 2008
+
+
+[ changes ]
+
++ removed the static versions of add() and subtract() for the sake of 
+  simplicity. use vect2.added() and vect2.subtracted for the same 
+  purpose.
+
+
+[ bug fixes ] 
+
++ fixed problem with rotate() and setRotation().
+
++ scaled() did not return the result, it does now.
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+

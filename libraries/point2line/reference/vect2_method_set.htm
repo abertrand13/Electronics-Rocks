@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>point2line : : Vect2 : : set ( )</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body> 
+<center>
+<table width="600" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td height="100" valign="top" class="header"><span class="libName">point2line</span><br>
+        <a href="index.htm">index</a></td>
+    <td width="450" class="descList">&nbsp;</td>
+  </tr>
+  <tr>
+    <td valign="top" class="mainTextName">Name</td>
+    <td class="methodName">set ( )</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Description</td>
+    <td valign=top class="descList">Sets the vector by copying (no reference is kept).</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Syntax</td>
+    <td valign=top class="descList"><pre>set(x, y);
+set(v);
+</pre></td>
+  </tr>
+  
+     <tr>
+       <td class="mainText">Parameters</td>
+       <td valign=top class="descList">
+         <table border=0 cellspacing=0 cellpadding=0>
+           
+      <tr>
+        <td width="70" valign=top>x,y</td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>components (<code>float,float</code>)</td>
+	  </tr>
+    
+      <tr>
+        <td width="70" valign=top>vector</td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>to be copied into the vector (<code>Vect2</code>)</td>
+	  </tr>
+    
+         </table>
+	   </td>
+	 </tr>
+   
+  
+     <tr>
+       <td valign=top class="mainText">Returns</td>
+       <td class="descList">None</td>
+     </tr>
+   
+  <tr>
+    <td valign=top class="mainText">Usage</td>
+    <td class="descList">Web & Application</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Related</td>
+    <td class="descList"><A href="vect2_method_setzero.htm">setZero ( )</A><BR>
+</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Examples</td>
+    <td valign=top class="descList"><pre><code>import point2line.*;
+
+Vect2 velocity = new Vect2( 1, 0 );
+
+println( velocity );  // prints "Vect2( 1.0, 0.0 )"
+
+velocity.set( 5, 5 );
+
+println( velocity );  // prints "Vect2( 5.0, 5.0 )"
+
+Vect2 newVelocity = new Vect2( 10, 10 );
+velocity.set( newVelocity );
+
+println( velocity );  // prints "Vect2( 10.0, 10.0 )"
+</code></pre></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td class="descList">&nbsp;</td>
+  </tr>
+</table>
+</center>
+</body>
+</html>

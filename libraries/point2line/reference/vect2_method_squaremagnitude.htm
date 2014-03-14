@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>point2line : : Vect2 : : squareMagnitude ( )</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body> 
+<center>
+<table width="600" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td height="100" valign="top" class="header"><span class="libName">point2line</span><br>
+        <a href="index.htm">index</a></td>
+    <td width="450" class="descList">&nbsp;</td>
+  </tr>
+  <tr>
+    <td valign="top" class="mainTextName">Name</td>
+    <td class="methodName">squareMagnitude ( )</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Description</td>
+    <td valign=top class="descList">Returns the square magnitude (square length) of the vector. <br>
+ <br>
+ The square root function which is used when calling magnitude() is horrendously slow, 
+ so try to avoid calculating vector lengths whenever you can. A common problem in computer 
+ graphics is to find the shortest vector in a list, in this case you only need to calculate 
+ the square magnitude (x*x + y*y) for each of them and find the smallest value from that 
+ (since the vector with the shortest length will also have the smallest squared length).</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Syntax</td>
+    <td valign=top class="descList"><pre>squareMagnitude();
+</pre></td>
+  </tr>
+  
+  
+     <tr>
+       <td valign=top class="mainText">Returns</td>
+       <td class="descList">square magnitude of this vector (<code>float</code>)</td>
+     </tr>
+   
+  <tr>
+    <td valign=top class="mainText">Usage</td>
+    <td class="descList">Web & Application</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Related</td>
+    <td class="descList"><A href="vect2_method_magnitude.htm">magnitude ( )</A><BR>
+<A href="vect2_method_setmagnitude.htm">setMagnitude ( )</A><BR>
+</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Examples</td>
+    <td valign=top class="descList"><pre><code>/**
+*  using squareMagnitude() to make a cheap distance test.
+*  use isGreaterThan and isLessThan as convenience methods for the same.
+*/
+
+import point2line.*;
+
+Vect2 mouse;
+Vect2 center;
+float radius, diameter;
+
+void setup(){
+  size( 200, 200 );
+  smooth();
+  
+  mouse = new Vect2();
+  center = new Vect2( width*0.5, height*0.5 );
+  radius = width * 0.4;
+  diameter = radius * 2;
+}
+
+void draw()
+{
+  // test for hover //
+  mouse.set( mouseX, mouseY );
+  mouse.subtract( center );
+  boolean isHovering = ( mouse.squareMagnitude() &lt; radius * radius );
+
+  // display //
+  background( 0 );
+  if( isHovering ) fill( 0, 255, 0 );
+   else fill( 255, 0, 0 );
+  ellipse( center.x, center.y, diameter, diameter );
+}
+
+
+
+
+</code></pre></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td class="descList">&nbsp;</td>
+  </tr>
+</table>
+</center>
+</body>
+</html>

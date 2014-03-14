@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>point2line : : Space2 : : lineIntersection ( )</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body> 
+<center>
+<table width="600" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td height="100" valign="top" class="header"><span class="libName">point2line</span><br>
+        <a href="index.htm">index</a></td>
+    <td width="450" class="descList">&nbsp;</td>
+  </tr>
+  <tr>
+    <td valign="top" class="mainTextName">Name</td>
+    <td class="methodName">lineIntersection ( )</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Description</td>
+    <td valign=top class="descList">Calculates the intersection of two continuous lines. <br>
+ <br>
+ The algorithm is explained here:
+ http://local.wasp.uwa.edu.au/~pbourke/geometry/lineline2d/</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Syntax</td>
+    <td valign=top class="descList"><pre>lineIntersection(p1, p2, p3, p4);
+</pre></td>
+  </tr>
+  
+     <tr>
+       <td class="mainText">Parameters</td>
+       <td valign=top class="descList">
+         <table border=0 cellspacing=0 cellpadding=0>
+           
+      <tr>
+        <td width="70" valign=top>p1,p2,p3,p4</td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>two pair of vectors each defining a line (<code>Vect2,Vect2,Vect2,Vect2</code>)</td>
+	  </tr>
+    
+         </table>
+	   </td>
+	 </tr>
+   
+  
+     <tr>
+       <td valign=top class="mainText">Returns</td>
+       <td class="descList">null if there is no intersection, otherwise a vector containing the intersection coordinate (<code>Vect2</code>)</td>
+     </tr>
+   
+  <tr>
+    <td valign=top class="mainText">Usage</td>
+    <td class="descList">Web & Application</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Related</td>
+    <td class="descList"></td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Examples</td>
+    <td valign=top class="descList"><pre><code>import point2line.*;
+
+Vect2[] line1;
+Vect2[] line2;
+
+void setup()
+{
+  size( 200, 200 );
+  smooth();
+  fill( 255, 0, 0 );
+  stroke( 255 );
+
+  line1 = new Vect2[ 2 ];
+  line1[ 0 ] = new Vect2( 0, height* 0.4 );
+  line1[ 1 ] = new Vect2( width, height* 0.9 );
+  
+  line2 = new Vect2[ 2 ];
+  line2[ 0 ] = new Vect2( width*0.5, 0 );
+  line2[ 1 ] = new Vect2(); // will be updateed by the mouse
+}
+
+
+void draw()
+{
+  line2[ 1 ] = new Vect2( mouseX, mouseY );
+  
+  Vect2 intersectionPoint = Space2.lineIntersection( line1[ 0 ], line1[ 1 ], line2[ 0 ], line2[ 1 ] );
+  
+  // display //
+  background( 0 );
+  if( intersectionPoint != null ){
+    ellipse( intersectionPoint.x, intersectionPoint.y, 10, 10 );
+  }
+  line( line1[ 0 ].x, line1[ 0 ].y, line1[ 1 ].x, line1[ 1 ].y );
+  line( line2[ 0 ].x, line2[ 0 ].y, line2[ 1 ].x, line2[ 1 ].y );
+}
+</code></pre></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td class="descList">&nbsp;</td>
+  </tr>
+</table>
+</center>
+</body>
+</html>

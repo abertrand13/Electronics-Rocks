@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>point2line : : Vect2 : : dot ( )</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body> 
+<center>
+<table width="600" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td height="100" valign="top" class="header"><span class="libName">point2line</span><br>
+        <a href="index.htm">index</a></td>
+    <td width="450" class="descList">&nbsp;</td>
+  </tr>
+  <tr>
+    <td valign="top" class="mainTextName">Name</td>
+    <td class="methodName">dot ( )</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Description</td>
+    <td valign=top class="descList">Returns the dot product of this vector and another.
+ The dot product value is in fact the cosine of the angle 
+ between the two input vectors, multiplied by the lengths 
+ of those vectors. So, you can easily calculate the cosine 
+ of the angle by either, making sure that your two vectors 
+ are both of length 1, or dividing the dot product by the 
+ lengths.
+ cos( theta ) = dot( v1, v2 ) / ( magnitude( v1 ) * magnitude( v2 ) )
+ Values range from 1 to -1. If the two input vectors are 
+ pointing in the same direction, then the return value will 
+ be 1. If the two input vectors are pointing in opposite 
+ directions, then the return value will be -1. If the two 
+ input vectors are at right angles, then the return value 
+ will be 0. So, in effect, it is telling you how similar 
+ the two vectors are.</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Syntax</td>
+    <td valign=top class="descList"><pre>dot(vector1, vector2);
+</pre></td>
+  </tr>
+  
+     <tr>
+       <td class="mainText">Parameters</td>
+       <td valign=top class="descList">
+         <table border=0 cellspacing=0 cellpadding=0>
+           
+      <tr>
+        <td width="70" valign=top>vector1</td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>(<code>Vect2</code>)</td>
+	  </tr>
+    
+      <tr>
+        <td width="70" valign=top>vector2</td>
+        <td width="20">&nbsp;</td>
+        <td valign=top>(<code>Vect2</code>)</td>
+	  </tr>
+    
+         </table>
+	   </td>
+	 </tr>
+   
+  
+     <tr>
+       <td valign=top class="mainText">Returns</td>
+       <td class="descList">dot product (<code>float</code>)</td>
+     </tr>
+   
+  <tr>
+    <td valign=top class="mainText">Usage</td>
+    <td class="descList">Web & Application</td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Related</td>
+    <td class="descList"></td>
+  </tr>
+  <tr>
+    <td valign=top class="mainText">Examples</td>
+    <td valign=top class="descList"><pre><code>import point2line.*;
+
+Vect2 right  = new Vect2( radians( 0 ) );
+Vect2 down   = new Vect2( radians( 90 ) );
+Vect2 left   = new Vect2( radians( 180 ) );
+Vect2 up     = new Vect2( radians( 270 ) );
+
+Vect2 almostRight = new Vect2( radians( 10 ) );
+
+println( Vect2.dot( almostRight, right ) ); // prints "0.9848077"
+println( Vect2.dot( almostRight, down ) );  // prints "0.17364813"
+println( Vect2.dot( almostRight, left ) );  // prints "-0.9848077"
+println( Vect2.dot( almostRight, up ) );    // prints "-0.17364816"
+</code></pre></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td class="descList">&nbsp;</td>
+  </tr>
+</table>
+</center>
+</body>
+</html>
