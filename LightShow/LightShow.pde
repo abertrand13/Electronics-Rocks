@@ -14,8 +14,8 @@ boolean animating = false;
 int frame;
 int lastKeyframeIndices[] = new int[3];
  
-int redBoxX = 20;
-int redBoxY = 300;
+int firstBoxX = 20;
+int firstBoxY = 300;
 int boxWidth = 200;
 int boxHeight = 100;
 boolean isClicking = false;
@@ -31,14 +31,14 @@ void setup() {
   noStroke();
   background(255, 255, 255);
   keyframeBoxes =  new KeyframeBox[3];
-  keyframeBoxes[0] = new KeyframeBox(20, 300, boxWidth, boxHeight, showLength, color(255, 0, 0));
-  keyframeBoxes[1] = new KeyframeBox(20, 410, boxWidth, boxHeight, showLength, color(0, 255, 0));
-  keyframeBoxes[2] = new KeyframeBox(20, 520, boxWidth, boxHeight, showLength, color(0, 0, 255)); 
+  keyframeBoxes[0] = new KeyframeBox(firstBoxX, firstBoxY, boxWidth, boxHeight, showLength, color(255, 0, 0));
+  keyframeBoxes[1] = new KeyframeBox(firstBoxX, firstBoxY+boxHeight+10, boxWidth, boxHeight, showLength, color(0, 255, 0));
+  keyframeBoxes[2] = new KeyframeBox(firstBoxX, firstBoxY+2*boxHeight+20, boxWidth, boxHeight, showLength, color(0, 0, 255)); 
                    
   cp5 = new ControlP5(this);
   instructionsLabel = cp5.addTextlabel("label")
     .setText("LIGHT SHOW (currently only available in red)\n*Click anywhere in the black box to create a new\nkeyframe\n*Keyframes can be clicked and dragged to change\nthe animation\n*Delete or Backspace will erase the highlighted\nkeyframe\n*Click PLAY! to test the show")
-    .setPosition(10, redBoxY-240)
+    .setPosition(10, firstBoxY-240)
     .setColorValue(0xfff00000)
     .setFont(createFont("Georgia",15))
     ;
@@ -46,19 +46,19 @@ void setup() {
   cp5.addButton("playAnimation")
     .setValue(0)
     .setCaptionLabel("Play!")
-    .setPosition(redBoxX, redBoxY-90)
+    .setPosition(firstBoxX, firstBoxY-90)
     .setSize(boxWidth, 25);
     
   cp5.addButton("stopAnimation")
     .setValue(0)
     .setCaptionLabel("Stop")
-    .setPosition(redBoxX, redBoxY-60)
+    .setPosition(firstBoxX, firstBoxY-60)
     .setSize(boxWidth, 25);
     
   cp5.addSlider("slider")
     .setCaptionLabel("Animation length")
     .setColorCaptionLabel(0)
-    .setPosition(redBoxX, redBoxY-30)
+    .setPosition(firstBoxX, firstBoxY-30)
     .setSize(boxWidth/2, 25)
     .setValue(200)
     .setRange(10,1000)

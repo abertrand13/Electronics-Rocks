@@ -43,8 +43,6 @@ class Keyframe {
     selected = false;  
   }
   
-
-  
   // display the keyframe
   void display() {
     colorMode(RGB, 255);
