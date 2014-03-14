@@ -149,12 +149,6 @@ int greenPin = 10;
 int bluePin = 9;
 
 // ==========================
-// Fade Over Time Mode Variables
-// ==========================
-boolean fadeIsInProgress; // set to true if accelerometer is experiencing freefall; false if not
-unsigned long fadeStartTime; // time in milliseconds between the program start and the last time the accelerometer entered freefall
-
-// ==========================
 // LightCycle Mode Variables
 // ==========================
 boolean freeFalling; // set to true if accelerometer is experiencing freefall; false if not
@@ -199,36 +193,38 @@ int MODE_SELECTION_WAIT = 7000;
 // Color Variables
 // ====================================
 // Predefined Colors
-// Converted to bytes to save memory
-byte RED[] = {
+// TODO: Convert to bytes to save memory?
+int RED[] = {
   255, 0, 0};    
-byte GREEN[] = {
+int GREEN[] = {
   0, 255, 0}; 
-byte BLUE[] = {
+int BLUE[] = {
   0, 0, 255}; 
-byte YELLOW[] = {
+int YELLOW[] = {
   255, 255, 0}; 
-byte CYAN[] = {
+int CYAN[] = {
   0, 255, 255}; 
-byte MAGENTA[] = {
+int MAGENTA[] = {
   255, 0, 255};
-byte WHITE[] = {
+int WHITE[] = {
   255, 255, 255}; 
-byte BLACK[] = {
+int BLACK[] = {
   0, 0, 0}; 
+
 byte PINK[] = {
   158, 4, 79}; 
 byte INDIGO[] = {
   4, 0, 19}; 
 byte ORANGE[] = {
   83, 4, 0}; 
-
+byte BLUE2[] = {
+  0, 0, 225}; 
 
 // Current color
-byte* currentColor = WHITE;
+int* currentColor = WHITE;
 
 // Array of colors
-byte* COLORS[] = {
+int* COLORS[] = {
   RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA}; 
 
 void setup() {
@@ -414,16 +410,15 @@ void loop() {
     // ============================
     //  MODE SWITCH STATEMENT
     // ============================
-    
     switch(mode) {
     case 0:
       {
-        currentColor = accelerationFade(RED, BLUE);
+        fadeRedBlueAcceleration();
       }
       break;
     case 1:
       {
-        currentColor = rotationFade(RED, BLUE);
+        fadeRedBlueRotation();
       }
       break;
     case 2:
@@ -433,29 +428,29 @@ void loop() {
       break;
     case 3:
       {
-        currentColor = timeFade(RED, BLUE, 500);
+        redToBlueFade(500, redPin, bluePin);
       }
       break;
     case 4:
       {
-        currentColor = lightCycle(RED, BLUE);
+        lightCycle();
         updateAccelHistory();
         //displayIfInFreeFall();
       }
       break;
     case 5:
       {
-        currentColor = userLightInput();
+        userLightInput();
       }
       break;
     case 6:
       {
-        currentColor = accelerationFade(sensorTemperatureFade(BLUE, RED, 0, 50), GREEN);
+        showSensorTemperature();
       }
       break; 
     case 7:
       {
-        currentColor = webTemperatureFade(BLUE, RED, 32, 100);
+        showWebTemperature();
       }
       break;
     case 8: 
@@ -465,11 +460,10 @@ void loop() {
       break;
     case 9: 
       {
-        currentColor = gravityGlow();
+        gravityGlow();
       }
       break;
     }
-    setColor(ledPins, currentColor);
   }
 }
 
@@ -479,13 +473,14 @@ void loop() {
 // =======================================================================================================================
 // =======================================================================================================================
 
-// ==================================================
-// FADE BETWEEN COLORS BASED ON ACCELERATION FEATURE
-// =================================================
+
+// ==============================================
+// FADE RED TO BLUE BASED ON ACCELERATION FEATURE
+// ==============================================
 /*
  * fades from red to blue based on acceleration (doesn't really work yet)
  */
-byte* accelerationFade(byte* lowColor, byte* highColor){
+void fadeRedBlueAcceleration(){
   mpu.dmpGetQuaternion(&q, fifoBuffer);
   mpu.dmpGetAccel(&aa, fifoBuffer);
   mpu.dmpGetGravity(&gravity, &q);
@@ -495,6 +490,7 @@ byte* accelerationFade(byte* lowColor, byte* highColor){
   int zAccel = aaReal.z;
   int maxAccelXY = (xAccel > yAccel) ? xAccel : yAccel;
   int maxAccel = (maxAccelXY > zAccel) ? maxAccelXY : zAccel;
+
 
   // Calculating stats (just for testing, don't worry about it)
   /*
@@ -516,32 +512,26 @@ byte* accelerationFade(byte* lowColor, byte* highColor){
   Serial.print(maxAccel);
 
 
-  // color1 to color2 based on acceleration
-  int accelVal = (maxAccel-3500) * 255 / 4000.0;
+  // Red to Blue based on acceleration
+  int accelVal = (maxAccel-3500) * ((double)255/4000.0);
   if (accelVal < 0){
     accelVal = 0;
   }
   Serial.print("\t");
   Serial.println(accelVal);
   accelVal = (accelVal > 255) ? 255 : accelVal;
-  return lerpColors255(lowColor, highColor, accelVal);
+  draw(accelVal, 0, 255 - accelVal); // red to blue
 } 
 
 // ==============================================
-// ROTATION FADE FEATURES
+// ROTATION FADE FEATURE
 // ==============================================
 
-// Fade from lowColor to highColor based on rotation speed
-byte* rotationFade(byte* lowColor, byte* highColor){
-  byte rotVal = getRotationSpeed255();
-  return lerpColors255(lowColor, highColor, rotVal);
-}
-
-// Fade from red to blue to green based on rotational speed
-// Doesn't work all that well, the colors don't fade very evenly so it flickers a lot
-byte* fadeRBGRotation(){
+// Fade from red to blue based on rotation speed
+void fadeRedBlueRotation(){
   int rotVal = getRotationSpeed255();
-  return fadeRedBlueGreen(rotVal); // R-B-G 
+  draw(rotVal, 0, 255 - rotVal); // R-B
+  //fadeRedBlueGreen(rotVal); // R-B-G 
 }
 
 // ==============================================
@@ -652,50 +642,28 @@ void redToBlueFade(int time,int redPin,int bluePin) {
 
 
 // ==============================================
-// FADE OVER TIME FEATURE (by Matt + Ingerid)
-// ==============================================
-byte* timeFade(byte* startColor, byte* endColor, int duration) {
-  byte progress; // change to int if this gets buggy
-  if (!fadeIsInProgress) {
-    fadeStartTime = millis();
-    fadeIsInProgress = true;
-  }
-  if (millis() - fadeStartTime < duration) { //before it lands, change color often
-    progress = map(millis(),fadeStartTime,fadeStartTime+duration,0,255);
-    progress = constrain(progress,0,255); // just in case something goes wrong
-    delay(10); //wait before changing color again to limit crazy flow of data
-  }
-  else {
-    fadeIsInProgress = false;
-    progress = 255;
-  }
-  return lerpColors(startColor, endColor, progress);
-}
-
-
-// ==============================================
 // LIGHT CYCLE FEATURE (by Matt!)
 // ==============================================
 /*
  * Test feature to delete: displayIfInFreeFall()
  *
  */
-//void displayIfInFreeFall() {
-//  //Serial.println(getLinearAccelerationMagnitude());
-//  if (accelIsPlunging(0.33)){
-//    //Serial.print("\t\t");
-//    draw(255,255,0); 
-//    Serial.println("Plunge!!!!!!!!!!!!!!!!");
-//  }
-//  else if (accelIsSpiking(3.0)){
-//    draw (0,255,255);
-//    Serial.println("Spike!!");
-//  }
-//  else {
-//    draw (255,255,255);
-//  }
-//  //Serial.println(getLinearAccelerationMagnitude());
-//}
+void displayIfInFreeFall() {
+  //Serial.println(getLinearAccelerationMagnitude());
+  if (accelIsPlunging(0.33)){
+    //Serial.print("\t\t");
+    draw(255,255,0); 
+    Serial.println("Plunge!!!!!!!!!!!!!!!!");
+  }
+  else if (accelIsSpiking(3.0)){
+    draw (0,255,255);
+    Serial.println("Spike!!");
+  }
+  else {
+    draw (255,255,255);
+  }
+  //Serial.println(getLinearAccelerationMagnitude());
+}
 
 /*
  * Times the duration of each throw, and fades from red to blue linearly or parabolically using the duration of the previous throw.
@@ -706,7 +674,7 @@ byte* timeFade(byte* startColor, byte* endColor, int duration) {
  *
  * TODO: maybe have it accept a light output function as a parameter?
  */
-byte* lightCycle(byte* startColor, byte* endColor) {
+void lightCycle() {
 
   // Detecting the start of a throw
   if (accelIsPlunging(0.33) && !freeFalling) { 
@@ -726,13 +694,14 @@ byte* lightCycle(byte* startColor, byte* endColor) {
     // Note: 0 <= cycleProgress <= 1
 
     // === Linear Fading ====
-    return lerpColors(startColor, endColor, cycleProgress);
+    int cycleProgress255 = (int) (cycleProgress * 255);
+    int red = 255 - cycleProgress255; // Starts at 255, linearly declines to 0
+    int blue = cycleProgress255; // Starts at 0, linearly increases to 255
+    draw(255-red, 255, 255-blue);
 
     // === Parabolic Fading ====
     // fadeRedBlueParabolically(cycleProgress, 0.6, 0.4);
   }  
-  else
-    return (startColor);
 
   // Detecting the end of a throw   
   // If it is no longer in free fall and we haven't set freeFalling back to false yet, set it to false, and set throwEndTime and lastThrowDuration.
@@ -759,12 +728,10 @@ byte* lightCycle(byte* startColor, byte* endColor) {
  * it to an int between 0 and 255 so that it is visible.
  * Currently buggy. MPU doesn't seem to work properly.
  */
-byte* sensorTemperatureFade(byte* lowColor, byte* highColor, int rangeMin, int rangeHigh) {
+void showSensorTemperature() {
   double sensorTemp = ((double)mpu.getTemperature() + 12412.0) / 340.0;
   int sensorTempInt = (int)sensorTemp;
-  sensorTempInt = constrain(sensorTempInt, rangeMin, rangeHigh); // to make sure it doesn't mess up the linear mapping
-  int tempLerpAmt = map(sensorTempInt, rangeMin, rangeHigh, 0, 255);
-  return lerpColors(lowColor, highColor, tempLerpAmt);
+  draw(sensorTempInt, 0, 255 - sensorTempInt);
 }
 
 // Juan's version - TODO: reconcile/combine with the above and add to mode choices
@@ -776,30 +743,22 @@ void setColorOnTemperature(int temp){
     fadeToColor(ledPins, INDIGO, ORANGE, 10);
   } 
   else{ //when it is cold
-    fadeToColor(ledPins, BLUE, ORANGE, 10);
-    fadeToColor(ledPins, ORANGE, BLUE, 10); 
+    fadeToColor(ledPins, BLUE2, ORANGE, 10);
+    fadeToColor(ledPins, ORANGE, BLUE2, 10); 
   }
 }
 
 // ==============================================
 // WEB TEMPERATURE FEATURE
 // ==============================================
-/*
- * Fades between lowColor and highColor based on how a temperature gotten from the Processing app (which is in turn from the web)
- * compares to rangeMin and rangeHigh.
- * The Processing app currently sends temperatures in Fahrenheit.
- */
-byte* webTemperatureFade(byte* lowColor, byte* highColor, int rangeMin, int rangeHigh) {
+void showWebTemperature() {
   numLoops++;
-  if (numLoops % 100 == 0) { // read and change only 1x per 100 loops
+  if (numLoops % 100 == 0) {
     Serial1.println("Getting Temperature");
     receiveStringFromComputer();
     int webTemp = computerString.toInt();
-    webTemp = constrain(webTemp, rangeMin, rangeHigh); // to make sure it doesn't mess up the linear mapping
-    int tempLerpAmt = map(webTemp, rangeMin, rangeHigh, 0, 255);
-    return lerpColors(lowColor, highColor, tempLerpAmt);
+    draw(webTemp, 0, 255 - webTemp);
   }
-  return currentColor; // no change
 }
 
 // ==============================================
@@ -834,12 +793,11 @@ void rapidFlashing(int time) {
 /*
  * Changes color according to the current orientation of the ball.
  */
-byte* gravityGlow() {
+void gravityGlow() {
   mpu.dmpGetQuaternion(&q, fifoBuffer);
   mpu.dmpGetGravity(&gravity, &q);
-  //byte outputColor[] = {(byte) 127*(1+gravity.x),(byte) 127*(1+gravity.y),(byte) 127*(1+gravity.z)}
-  byte outputColor[] = {(byte) 255*(1-abs(gravity.x)),(byte) 255*(1-abs(gravity.y)),(byte) 255*(1-abs(gravity.z))};
-  return outputColor;
+  //draw((int) 127*(1+gravity.x),(int) 127*(1+gravity.y),(int) 127*(1+gravity.z));
+  draw((int) 255*(1-abs(gravity.x)),(int) 255*(1-abs(gravity.y)),(int) 255*(1-abs(gravity.z))); // Another option
 }
 
 
@@ -965,7 +923,7 @@ boolean checkForEscape() {
  * Gets RGB values from the user via the Serial and alters
  * the light accordingly.
  */
-byte* userLightInput() {
+void userLightInput() {
   // Receives information from computer
   receiveStringFromComputer();
 
@@ -1001,11 +959,8 @@ byte* userLightInput() {
         }
       }
     }
-    byte outputColor[] = {red, green, blue};
-    return outputColor;
-  }
-  else {
-    return currentColor;
+
+    draw(red, green, blue);
   }
 }
 
@@ -1022,33 +977,6 @@ void changeModeLight(int mode) {
 
   currentColor = COLORS[col];
   setColor(ledPins, currentColor);
-}
-
-/*
- * Linearly interpolates ("lerps") between color1 and color2 according to amt, which ranges from 0.0 to 1.0.
- * So lerpColors(color1, color2, 0.0) returns color1, lerpColors(color1, color2, 1.0) returns color2, etc.
- * Precondition: 0.0<=amt<=1.0
- */
-byte* lerpColors(byte* color1, byte* color2, float amt) {
-  byte redByte = (byte) (color1[0] * (1.0 - amt) + color2[0] * amt);
-  byte greenByte = (byte) (color1[1] * (1.0 - amt) + color2[1] * amt);
-  byte blueByte = (byte) (color1[2] * (1.0 - amt) + color2[2] * amt);
-  byte lerpedColor[] = {redByte, greenByte, blueByte};
-  return lerpedColor;
-}
-
-/*
- * Linearly interpolates ("lerps") between color1 and color2 according to amt, which ranges from 0 to 255.
- * So lerpColors(color1, color2, 0) returns color1, lerpColors(color1, color2, 255) returns color2, 
- * and lerpColors(color1, color2, 128) returns somewhere in between, etc.
- * Precondition: 0<=amt<=255
- */
-byte* lerpColors255(byte* color1, byte* color2, byte amt) {
-  byte redByte = (color1[0] * (255 - amt) + color2[0] * amt)/255;
-  byte greenByte = (color1[1] * (255 - amt) + color2[1] * amt)/255;
-  byte blueByte = (color1[2] * (255 - amt) + color2[2] * amt)/255;
-  byte lerpedColor[] = {redByte, greenByte, blueByte};
-  return lerpedColor;
 }
 
 /**
@@ -1105,7 +1033,7 @@ int color(char color) {
 }
 
 /**
- * Sets the LED's color using an int array.
+ * Sets the color using an int array.
  */
 void setColor(int* led, int* color){
   for(int i = 0; i < 3; i++){
@@ -1113,9 +1041,6 @@ void setColor(int* led, int* color){
   }
 }
 
-/**
- * Sets the LED's color using a byte array.
- */
 void setColor(int* led, byte* color){
   for(int i = 0; i< 3; i++){
     analogWrite(led[i], 255-color[i]);  
@@ -1159,33 +1084,22 @@ void fadetoColor(int* led, const byte* startColor, const byte* endColor, int fad
 
 /*
  * Returns the pythagorean sum of the x-, y-, and z-rotation values
+ * Comment: How accurate is this? Can rotation speed components be added like vectors?
  */
 int getRotationSpeed() {
   int xRot = abs(mpu.getRotationX());
   int yRot = abs(mpu.getRotationY());
   int zRot = abs(mpu.getRotationZ());
 
-  // Change the ints to longs to avoid int overflow (necessary?)
-  return (int) sqrt(pow((long)xRot,2) + pow((long)yRot,2) + pow((long)zRot,2));
+  // If this goes wacko, it's int overflow - change the ints to longs and cast it back at the end.
+  return sqrt(pow(xRot,2) + pow(yRot,2) + pow(zRot,2));
 }
 
-/*
- * Normalizes getRotationSpeed() to never be more than 255
- */
+// Normalizes getRotationSpeed() to never be more than 255
 int getRotationSpeed255() { 
   int maxRot = getRotationSpeed();
   int rotVal = maxRot * (255/8000.0);
   rotVal = (rotVal > 255) ? 255 : rotVal; //normalize it to never be more than 255
-  return rotVal;
-}
-
-/*
- * Normalizes getRotationSpeed() to never be more than 1.0
- */
-float getRotationSpeedFloat() {
-  int maxRot = getRotationSpeed();
-  float rotVal = maxRot/8000.0;
-  rotVal = (rotVal > 1.0) ? 1.0 : rotVal; //normalize it to never be more than 1.0
   return rotVal;
 }
 
@@ -1204,6 +1118,13 @@ int getLinearAccelerationMagnitude() {
   return sqrt(pow(xAcc, 2) + pow(yAcc, 2) + pow(zAcc, 2));
 }
 
+// Fade from red to blue to green based on rotational speed
+// Doesn't work all that well, the colors don't fade very evenly so it flickers a lot
+void fadeRBGRotation(){
+  int rotVal = getRotationSpeed255();
+  fadeRedBlueGreen(rotVal); // R-B-G 
+}
+
 //fade from red to blue based on z component of gravity
 void fadeRedBlueGravity(){
   //read the z component of the gravity, and adjust the LED accordingly
@@ -1220,12 +1141,11 @@ void fadeRedBlueGravity(){
 
 }
 
-byte* fadeRedBlueGreen(int val){
-  byte r = (val*2 - 255 > 0) ? (val*2 - 255) : 0;
-  byte b = (128 - val) *2;
-  byte g = ((((255 - val) * 2) - 255) > 0) ? ((255 - val) * 2 - 255) : 0;
-  byte rgb[] = {r, g, b};
-  return rgb;
+void fadeRedBlueGreen(int val){
+  int r = (val*2 - 255 > 0) ? (val*2 - 255) : 0;
+  int b = (128 - val) *2;
+  int g = ((((255 - val) * 2) - 255) > 0) ? ((255 - val) * 2 - 255) : 0;
+  draw(r, g, b); 
 }
 
 /*

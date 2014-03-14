@@ -1,6 +1,6 @@
 /*
  * Lets you make a light show!
- *
+ * Needs more commenting + explanation...
  */
  
 import controlP5.*;
