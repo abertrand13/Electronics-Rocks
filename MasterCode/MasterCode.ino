@@ -174,8 +174,8 @@ int historyIndex = 0;
 // Distance in cm (mm?) from center of mass of the ball. Used for centripetal acceleration offset in detecting freefall.
 int distFromCOM = 2; // TODO: Allow the user to measure and enter this somehow.
 
-boolean usingWiredSerial = false;
-boolean usingWirelessSerial = false;
+boolean usingWiredSerial = true;
+boolean usingWirelessSerial = true;
 
 // ====================================
 // Variables Relating to Changing Modes
@@ -226,6 +226,7 @@ byte ORANGE[] = {
 
 // Current color
 byte* currentColor = WHITE;
+byte* nextColor = WHITE;
 
 // Array of colors
 byte* COLORS[] = {
@@ -418,12 +419,12 @@ void loop() {
     switch(mode) {
     case 0:
       {
-        currentColor = accelerationFade(RED, BLUE);
+        nextColor = accelerationFade(RED, BLUE);
       }
       break;
     case 1:
       {
-        currentColor = rotationFade(RED, BLUE);
+        nextColor = rotationFade(RED, BLUE);
       }
       break;
     case 2:
@@ -433,29 +434,29 @@ void loop() {
       break;
     case 3:
       {
-        currentColor = timeFade(RED, BLUE, 500);
+        nextColor = timeFade(RED, BLUE, 500);
       }
       break;
     case 4:
       {
-        currentColor = lightCycle(RED, BLUE);
+        nextColor = lightCycle(RED, BLUE);
         updateAccelHistory();
         //displayIfInFreeFall();
       }
       break;
     case 5:
       {
-        currentColor = userLightInput();
+        nextColor = userLightInput();
       }
       break;
     case 6:
       {
-        currentColor = accelerationFade(sensorTemperatureFade(BLUE, RED, 0, 50), GREEN);
+        nextColor = accelerationFade(sensorTemperatureFade(BLUE, RED, 0, 50), GREEN);
       }
       break; 
     case 7:
       {
-        currentColor = webTemperatureFade(BLUE, RED, 32, 100);
+        nextColor = webTemperatureFade(BLUE, RED, 32, 100);
       }
       break;
     case 8: 
@@ -465,11 +466,16 @@ void loop() {
       break;
     case 9: 
       {
-        currentColor = gravityGlow();
+        nextColor = gravityGlow();
       }
       break;
     }
-    setColor(ledPins, currentColor);
+    if (nextColor[0] != currentColor[0] || nextColor[1] != currentColor[1] || nextColor[2] != currentColor[2]) {
+      currentColor[0] = nextColor[0];
+      currentColor[1] = nextColor[1];
+      currentColor[2] = nextColor[2];
+      setColor(ledPins, currentColor);
+    }
   }
 }
 
@@ -622,7 +628,7 @@ void hotPotato() {
 
 
 // ===========================================
-// RED TO BLUE FADE FEATURE (by Ingerid!)
+// RED TO BLUE FADE FEATURE
 // ===========================================
 //Fades red to blue wit. Might need to change color more often.
 // seems to work, but not tested with avg time function and real free fall
@@ -652,7 +658,7 @@ void redToBlueFade(int time,int redPin,int bluePin) {
 
 
 // ==============================================
-// FADE OVER TIME FEATURE (by Matt + Ingerid)
+// FADE OVER TIME FEATURE
 // ==============================================
 byte* timeFade(byte* startColor, byte* endColor, int duration) {
   byte progress; // change to int if this gets buggy
@@ -669,12 +675,12 @@ byte* timeFade(byte* startColor, byte* endColor, int duration) {
     fadeIsInProgress = false;
     progress = 255;
   }
-  return lerpColors(startColor, endColor, progress);
+  return lerpColors255(startColor, endColor, progress);
 }
 
 
 // ==============================================
-// LIGHT CYCLE FEATURE (by Matt!)
+// LIGHT CYCLE FEATURE
 // ==============================================
 /*
  * Test feature to delete: displayIfInFreeFall()
@@ -803,7 +809,7 @@ byte* webTemperatureFade(byte* lowColor, byte* highColor, int rangeMin, int rang
 }
 
 // ==============================================
-// ACCELERATION FLASHING FEATURE by Juan! 
+// ACCELERATION FLASHING FEATURE
 // ==============================================
 /*
  * Flashes red, blue, green very quickly if it's accelerating a lot, less quickly otherwise.
@@ -872,11 +878,12 @@ void enterModeSelection() {
   while (true) {
     // Receives information from computer
     receiveStringFromComputer();
+    
     // Receives information from arduino
     receiveCharFromArduino();
 
-    if (computerString.length() == 1 && computerString[0] >= '0' && computerString[0] <= numModesString[0]) {
-      mode = computerString[0] - '0';
+    if (computerString.length() >= 1 && computerString[0] >= '0' && computerString[0] <= '9' && computerString.toInt() <= NUMBER_OF_MODES) {
+      mode = computerString.toInt();
       Serial.print("Key pressed: Mode ");
       Serial.println(mode); 
       changeModeLight(mode);

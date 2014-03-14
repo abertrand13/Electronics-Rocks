@@ -168,8 +168,8 @@ int historyIndex = 0;
 // Distance in cm (mm?) from center of mass of the ball. Used for centripetal acceleration offset in detecting freefall.
 int distFromCOM = 2; // TODO: Allow the user to measure and enter this somehow.
 
-boolean usingWiredSerial = false;
-boolean usingWirelessSerial = false;
+boolean usingWiredSerial = true;
+boolean usingWirelessSerial = true;
 
 // ====================================
 // Variables Relating to Changing Modes
@@ -612,7 +612,7 @@ void hotPotato() {
 
 
 // ===========================================
-// RED TO BLUE FADE FEATURE (by Ingerid!)
+// RED TO BLUE FADE FEATURE
 // ===========================================
 //Fades red to blue wit. Might need to change color more often.
 // seems to work, but not tested with avg time function and real free fall
@@ -833,8 +833,8 @@ void enterModeSelection() {
     // Receives information from arduino
     receiveCharFromArduino();
 
-    if (computerString.length() == 1 && computerString[0] >= '0' && computerString[0] <= numModesString[0]) {
-      mode = computerString[0] - '0';
+    if (computerString.length() >= 1 && computerString[0] >= '0' && computerString[0] <= '9' && computerString.toInt() <= NUMBER_OF_MODES) {
+      mode = computerString.toInt();
       Serial.print("Key pressed: Mode ");
       Serial.println(mode); 
       changeModeLight(mode);
