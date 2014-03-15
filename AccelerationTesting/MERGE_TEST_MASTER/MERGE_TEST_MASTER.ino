@@ -474,6 +474,11 @@ void loop() {
       }
       break;
     }
+    case 10:
+     {
+       Serial.println("We love Derin");
+       break;
+     }
     if (nextColor[0] != currentColor[0] || nextColor[1] != currentColor[1] || nextColor[2] != currentColor[2]) {
       currentColor[0] = nextColor[0];
       currentColor[1] = nextColor[1];
