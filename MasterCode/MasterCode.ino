@@ -680,7 +680,6 @@ void timeFade(byte *outputColor, byte* startColor, byte* endColor, int duration)
  * Pros of this approach: No FIFO overflow -> better MPU sensing
  * Cons of this approach: Requires more global variables
  *
- * TODO: maybe have it accept a light output function as a parameter?
  */
 void lightCycle(byte *outputColor, byte *startColor, byte *endColor) {
 
@@ -710,8 +709,6 @@ void lightCycle(byte *outputColor, byte *startColor, byte *endColor) {
 
   // Detecting the end of a throw   
   // If it is no longer in free fall and we haven't set freeFalling back to false yet, set it to false, and set throwEndTime and lastThrowDuration.
-  // Potential issue: is the minimum accel threshold for !isFreeFalling() too low? 
-  // Do we need a isStronglyAccelerating() function with a higher minimum threshold instead of !isFreeFalling()?
   if (freeFalling && accelIsSpiking(1.5)) {
     freeFalling = false;
     throwEndTime = millis() % 100000;
@@ -732,7 +729,6 @@ void lightCycle(byte *outputColor, byte *startColor, byte *endColor) {
 /*
  * Should show temperature from the sensor, and then map
  * it to an int between 0 and 255 so that it is visible.
- * Currently buggy. MPU doesn't seem to work properly.
  */
 void sensorTemperatureFade(byte *outputColor, byte *lowColor, byte *highColor, int rangeMin, int rangeHigh) {
   double sensorTemp = ((double)mpu.getTemperature() + 12412.0) / 340.0;
