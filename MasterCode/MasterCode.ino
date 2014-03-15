@@ -309,7 +309,6 @@ void setup() {
   devStatus = mpu.dmpInitialize();
 
   // supply your own gyro offsets here, scaled for min sensitivity
-  // we should determine these numbers 
   mpu.setXGyroOffset(220);
   mpu.setYGyroOffset(76);
   mpu.setZGyroOffset(-85);
@@ -497,7 +496,7 @@ void loop() {
 // FADE BETWEEN COLORS BASED ON ACCELERATION FEATURE
 // =================================================
 /*
- * fades from red to blue based on acceleration (doesn't really work yet)
+ * fades from red to blue based on acceleration 
  */
 void accelerationFade(byte *outputColor, byte *lowColor, byte *highColor){
   mpu.dmpGetQuaternion(&q, fifoBuffer);
@@ -510,15 +509,7 @@ void accelerationFade(byte *outputColor, byte *lowColor, byte *highColor){
   int maxAccelXY = (xAccel > yAccel) ? xAccel : yAccel;
   int maxAccel = (maxAccelXY > zAccel) ? maxAccelXY : zAccel;
 
-  // Calculating stats (just for testing, don't worry about it)
-  /*
-  maxOverallAccel =  (maxOverallAccel > maxAccel) ? maxOverallAccel : maxAccel;
-   accelValues++;
-   if (accelValues == 1){
-   avgAccel = maxAccel;
-   } else{
-   avgAccel = avgAccel - avgAccel/accelValues + maxAccel/accelValues;
-   }*/
+
 
   Serial.print("\t");
   Serial.print(xAccel); 
@@ -559,7 +550,6 @@ void rotationFade(byte *outputColor, byte *lowColor, byte *highColor){
 }
 
 // Fade from red to blue to green based on rotational speed
-// Doesn't work all that well, the colors don't fade very evenly so it flickers a lot
 byte* fadeRBGRotation(){
   int rotVal = getRotationSpeed255();
   return fadeRedBlueGreen(rotVal); // R-B-G 
