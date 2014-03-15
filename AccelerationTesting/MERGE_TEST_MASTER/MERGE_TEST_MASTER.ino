@@ -1041,7 +1041,7 @@ void userLightInput(byte *outputColor) {
  */
 void changeModeLight(int mode) {
   int col = mode % 6; //loop back around if mode > 5
-
+  //BLAHBLAHBLAH
   currentColor = COLORS[col];
   setColor(ledPins, currentColor);
 }
