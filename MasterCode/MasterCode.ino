@@ -574,7 +574,7 @@ byte* fadeRBGRotation(){
 // ==============================================
 void hotPotato(byte *outputColor, byte* onColor, byte* endColor) {
 
-  if (!gameLength) {
+  if (gameLength == 0) {
     gameLength = random(10000,30000); //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
     Serial.println(gameLength);
   }
@@ -618,8 +618,11 @@ void hotPotato(byte *outputColor, byte* onColor, byte* endColor) {
     // Receives information from arduino
     receiveCharFromArduino();
     if (checkForEscapeHotPotato()||digitalRead(BUTTON_PIN) == LOW) { //if the game's over, check for the user to reset
-      t = 0;
       gameLength = 0;
+      t_lastSwitch = 0;
+      t = 0;
+  
+      isOn = true;
       gameOver = false;
     }
     
