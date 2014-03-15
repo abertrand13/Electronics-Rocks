@@ -33,7 +33,7 @@ String serialString = "";
 Serial myPort;        // The serial port
 
 int WINDOW_WIDTH = 400;
-int WINDOW_HEIGHT = 600;
+int WINDOW_HEIGHT = 700;
 
 int SECONDARY_LIST_WIDTH = 150;
 
@@ -89,7 +89,8 @@ void setup() {
   textFont(createFont("Arial", 14));
   
   // Sets up the Serial port. Enter the name of your usb cable here by checking which usb is being used.   
-  myPort = new Serial(this, "/dev/tty.usbserial-A702NXEJ", 9600);    
+  //myPort = new Serial(this, "/dev/tty.usbserial-A702NXEJ", 9600);   
+ myPort = new Serial(this, "/dev/tty.usbserial-A702O078", 9600);    
   myPort.bufferUntil('\n');      // Buffers until the Serial sends a new line character   
 
   // Main GUI Controller
@@ -320,11 +321,12 @@ public void controlEvent(ControlEvent c) {
     color col = color(redVal, greenVal, blueVal, a);
     for (int b=0; b<3; b++) {
       KeyframeBox kfBox = keyframeBoxes[b];
+      int colorComponent = (int) c.getArrayValue(b);
       int lastIndex = kfBox.keyframes.size()-1;
-      kfBox.keyframes.get(0).value = redVal;
-      kfBox.keyframes.get(0).y = valueToY(redVal, kfBox);
-      kfBox.keyframes.get(lastIndex).value = redVal;
-      kfBox.keyframes.get(lastIndex).y = valueToY(redVal, kfBox);
+      kfBox.keyframes.get(0).value = colorComponent;
+      kfBox.keyframes.get(0).y = valueToY(colorComponent, kfBox);
+      kfBox.keyframes.get(lastIndex).value = colorComponent;
+      kfBox.keyframes.get(lastIndex).y = valueToY(colorComponent, kfBox);
     }  
   } 
   // Writes the selected mode to port when the appropriate button is clicked
