@@ -239,8 +239,8 @@ byte ORANGE[] = {
 
 
 // Current color
-byte* currentColor = WHITE;
-byte* nextColor = WHITE;
+byte currentColor[] = {255,255,255};
+byte nextColor[] = {255,255,255};
 
 // Array of colors
 byte* COLORS[] = {
