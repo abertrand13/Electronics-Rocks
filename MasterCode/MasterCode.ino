@@ -1,3 +1,4 @@
+
 // ===========================
 // MASTER CODE - Creative Name for our Product
 // Authors: EE 27N (names in alphabetical order eventually)
@@ -143,24 +144,11 @@ String arduinoString;
 int ledPins[] = {
   9, 10, 11};
 
+
+//DELETE ONE OF THESE
 int redPin = 11;
 int greenPin = 10;
 int bluePin = 9;
-
-// ==========================
-// Hot Potato Variables
-// ==========================
-
-  int t_on = 100; //time (in ms) that the led should be on (per blink)
-  int t_off0 = 1000; //time (in ms) that the led should be off at the loop's start
-  int t_off; //time that the led should be off (per blink). this will change over the course of the loop  
-
-  int gameLength= 0; //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
-  int t_lastSwitch = 0;
-  int t = 0;
-  
-  boolean isOn = true;
-  boolean gameOver = false;
 
 // ==========================
 // Fade Over Time Mode Variables
@@ -169,14 +157,14 @@ boolean fadeIsInProgress; // set to true if accelerometer is experiencing freefa
 unsigned long fadeStartTime; // time in milliseconds between the program start and the last time the accelerometer entered freefall
 
 // ==========================
-// airTimeFade Mode Variables
+// LightCycle Mode Variables
 // ==========================
 boolean freeFalling; // set to true if accelerometer is experiencing freefall; false if not
 unsigned long throwStartTime; // time in milliseconds between the program start and the last time the accelerometer entered freefall
 unsigned long throwEndTime; // time in milliseconds between the program start and the last time the accelerometer exited freefall
 int lastThrowDuration = 100; // the duration in milliseconds that it was last in freefall (throwEndTime - throwStartTime). First throw 100 default arbitrary - fix?
 
-const int historyLength = 10; // Keep it even, to be safe. The greater this is, the less sensitive airTimeFade is to spiking acceleration (which helps muffle noise)
+const int historyLength = 10; // Keep it even, to be safe. The greater this is, the less sensitive LightCycle is to spiking acceleration (which helps muffle noise)
 int accelHistory[historyLength];
 int recentAvgAccel = 0;
 int olderAvgAccel = 0;
@@ -186,7 +174,7 @@ int historyIndex = 0;
 // Initial Config Variables
 // ========================
 // Distance in cm (mm?) from center of mass of the ball. Used for centripetal acceleration offset in detecting freefall.
-int distFromCOM = 2; 
+int distFromCOM = 2; // TODO: Allow the user to measure and enter this somehow.
 
 boolean usingWiredSerial = true;
 boolean usingWirelessSerial = true;
@@ -204,7 +192,7 @@ int BUTTON_PIN = 15;
 int mode = 0;
 
 // Number of modes in mode selection
-int NUMBER_OF_MODES = 8;
+int NUMBER_OF_MODES = 10;
 
 // Amount of time to wait to advance from mode selection
 int MODE_SELECTION_WAIT = 7000;
@@ -255,7 +243,9 @@ void setup() {
   if (usingWirelessSerial)
     Serial1.begin(9600);
 
-
+  // Useful for debugging. Remove for final product
+  //if (usingWiredSerial)
+    //while(!Serial);
 
   // ====================
   // HARDWARE SETUP
@@ -274,8 +264,8 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT);
 
   //initializes the random() function with analog noise from an unused pin
-  randomSeed(analogRead(0)); 
-  
+  randomSeed(analogRead(0)); //is this an analog input on the fio?
+
   // join I2C bus (I2Cdev library doesn't do this automatically)
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
   Wire.begin();
@@ -303,12 +293,19 @@ void setup() {
   Serial.println(F("Testing device connections..."));
   Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
 
-  
+  //we didn't want to wait for ready...so we commented this out.  It initializes automatically now.
+  // wait for ready
+  //Serial.println(F("\nSend any character to begin DMP programming and demo: "));
+  //while (Serial.available() && Serial.read()); // empty buffer
+  //while (!Serial.available());                 // wait for data
+  //while (Serial.available() && Serial.read()); // empty buffer again
+
   // load and configure the DMP
   Serial.println(F("Initializing DMP..."));
   devStatus = mpu.dmpInitialize();
 
   // supply your own gyro offsets here, scaled for min sensitivity
+  // we should determine these numbers 
   mpu.setXGyroOffset(220);
   mpu.setYGyroOffset(76);
   mpu.setZGyroOffset(-85);
@@ -422,8 +419,6 @@ void loop() {
     // ============================
     
     switch(mode) {
-      
-    // Modes that do not require wireless connection to the Processing app:
     case 0:
       {
         accelerationFade(nextColor, RED, BLUE);
@@ -436,10 +431,7 @@ void loop() {
       break;
     case 2:
       {
-        // Fades between the color represented by the sensor temperature and GREEN based on the rotation speed
-        byte baseColor[3];
-        sensorTemperatureFade(baseColor, BLUE, RED, 0, 50);
-        rotationFade(nextColor, baseColor, GREEN);
+        hotPotato();
       }
       break;
     case 3:
@@ -449,20 +441,21 @@ void loop() {
       break;
     case 4:
       {
-        airTimeFade(nextColor, RED, BLUE);
+        lightCycle(nextColor, RED, BLUE);
         updateAccelHistory();
         //displayIfInFreeFall();
       }
       break;
     case 5:
       {
-        accelerationFlashing();
+        userLightInput(nextColor);
       }
       break;
-    // Modes that require connection to the Processing app:  
     case 6:
       {
-        userLightInput(nextColor);
+        byte baseColor[3];
+        sensorTemperatureFade(baseColor, BLUE, RED, 0, 50);
+        accelerationFade(nextColor, baseColor, GREEN);
       }
       break; 
     case 7:
@@ -472,22 +465,14 @@ void loop() {
       break;
     case 8: 
       {
-          //TODO: Acceleration Light Show
-           byte baseColor[3];
-           userLightInput(baseColor);
-           accelerationFade(nextColor, baseColor, GREEN);
+        accelerationFlashing();
       }
       break;
-//    case 9: 
-//      {
-//        hotPotato(nextColor, BLUE, RED);
-//      }
-//      break;
-//    case 10: 
-//      {
-//        gravityGlow(nextColor);
-//      }
-//      break;
+    case 9: 
+      {
+        gravityGlow(nextColor);
+      }
+      break;
     }
     if (nextColor[0] != currentColor[0] || nextColor[1] != currentColor[1] || nextColor[2] != currentColor[2]) {
       currentColor[0] = nextColor[0];
@@ -508,7 +493,7 @@ void loop() {
 // FADE BETWEEN COLORS BASED ON ACCELERATION FEATURE
 // =================================================
 /*
- * fades from red to blue based on acceleration 
+ * fades from red to blue based on acceleration (doesn't really work yet)
  */
 void accelerationFade(byte *outputColor, byte *lowColor, byte *highColor){
   mpu.dmpGetQuaternion(&q, fifoBuffer);
@@ -521,29 +506,35 @@ void accelerationFade(byte *outputColor, byte *lowColor, byte *highColor){
   int maxAccelXY = (xAccel > yAccel) ? xAccel : yAccel;
   int maxAccel = (maxAccelXY > zAccel) ? maxAccelXY : zAccel;
 
+  // Calculating stats (just for testing, don't worry about it)
+  /*
+  maxOverallAccel =  (maxOverallAccel > maxAccel) ? maxOverallAccel : maxAccel;
+   accelValues++;
+   if (accelValues == 1){
+   avgAccel = maxAccel;
+   } else{
+   avgAccel = avgAccel - avgAccel/accelValues + maxAccel/accelValues;
+   }*/
 
-
-//  Serial.print("\t");
-//  Serial.print(xAccel); 
-//  Serial.print("\t");
-//  Serial.print(yAccel); 
-//  Serial.print("\t");
-//  Serial.print(zAccel); 
-//  Serial.print("\t");
+  Serial.print("\t");
+  Serial.print(xAccel); 
+  Serial.print("\t");
+  Serial.print(yAccel); 
+  Serial.print("\t");
+  Serial.print(zAccel); 
+  Serial.print("\t");
   Serial.print(maxAccel);
 
 
   // color1 to color2 based on acceleration
-  int accelVal = (int)(maxAccel-3500)/1000.0 * 255;
+  int accelVal = (maxAccel-3500) * 255 / 4000.0;
   if (accelVal < 0){
     accelVal = 0;
   }
+  Serial.print("\t");
+  Serial.println(accelVal);
   accelVal = (accelVal > 255) ? 255 : accelVal;
-  Serial.print("\t");
-  Serial.print(accelVal);
   lerpColors255(outputColor, lowColor, highColor, accelVal);
-  Serial.print("\t");
-  Serial.println(outputColor[0]);
 } 
 
 // ==============================================
@@ -564,6 +555,7 @@ void rotationFade(byte *outputColor, byte *lowColor, byte *highColor){
 }
 
 // Fade from red to blue to green based on rotational speed
+// Doesn't work all that well, the colors don't fade very evenly so it flickers a lot
 byte* fadeRBGRotation(){
   int rotVal = getRotationSpeed255();
   return fadeRedBlueGreen(rotVal); // R-B-G 
@@ -572,58 +564,76 @@ byte* fadeRBGRotation(){
 // ==============================================
 // HOT POTATO FEATURE
 // ==============================================
-void hotPotato(byte *outputColor, byte* onColor, byte* endColor) {
+void hotPotato() {
 
-  if (!gameLength) {
-    gameLength = random(10000,30000); //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
-    Serial.println(gameLength);
-  }
-  
-  if (!gameOver) {
-    if (t < gameLength) {
-  
-      //these if statements blink the blue led
-      if (isOn){
-        if (t - t_lastSwitch > t_on) { //if the led's on, check if it's time to turn it off
-          isOn = false;
-          t_lastSwitch = t;
-        }
-      } 
-      else {//if the led's off, check if it's time to turn it on
-        t_off = map(t, 0, gameLength, t_off0, 0); //scales the off time down linearly according to how close the game is to ending 
-        //(i.e. according to how t compares with gameLength)
-        if (t - t_lastSwitch > t_off) {  
-          isOn = true;
-          t_lastSwitch = t;
-        }
+  int t_on = 100; //time (in ms) that the led should be on (per blink)
+  int t_off0 = 1000; //time (in ms) that the led should be off at the loop's start
+  int t_off; //time that the led should be off (per blink). this will change over the course of the loop
+
+  int rON[] = {
+    255,0,0                                        }; //lights red LED
+  int bON[] = {
+    0,0,255                                        }; //lights blue LED
+  int OFF[] = {
+    0,0,0                                        };   
+
+  int duration = random(10000,30000); //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
+  int t_lastSwitch = 0;
+  int t = 0;
+
+  Serial.println(duration);
+
+  boolean isOn = true;
+  setColor(ledPins, bON);
+
+  while (t < duration) {
+
+    // Receives information from computer
+    receiveStringFromComputer();
+
+    // Receives information from arduino
+    receiveCharFromArduino();
+
+    if (checkForEscape()) break;
+
+    //these if statements blink the blue led
+    if (isOn){
+      if (t - t_lastSwitch > t_on) { //if the led's on, check if it's time to turn it off
+        isOn = false;
+        t_lastSwitch = t;
       }
-  
-      t += 10;
-      delay(10);
-  
-      if (isOn) {
-        lerpColors255(outputColor, onColor, BLACK, 0);
-      } else {
-        lerpColors255(outputColor, BLACK, BLACK, 0);
+    } 
+    else {//if the led's off, check if it's time to turn it on
+      t_off = map(t, 0, duration, t_off0, 0); //scales the off time down linearly according to how close the game is to ending 
+      //(i.e. according to how t compares with duration)
+      if (t - t_lastSwitch > t_off) {  
+        isOn = true;
+        t_lastSwitch = t;
       }
-      
-    } else {
-       if (!isFreeFalling()){ //don't end the game if the ball's in midair
-       gameOver = true;
-        }
     }
-  } else {
+
+    if (isOn) setColor(ledPins, bON); 
+    else setColor(ledPins, OFF);
+
+    t += 10;
+    delay(10);
+  }
+
+  while (isFreeFalling()){
+    delay(500); //don't end the game while the ball is in mid-throw
+    Serial.println("Free Fall!");
+  }
+
+  setColor(ledPins, rON); //game is over, turn the led red
+
+  while (true) {//wait for the user to reset the game
     // Receives information from computer
     receiveStringFromComputer();
     // Receives information from arduino
     receiveCharFromArduino();
-    if (checkForEscapeHotPotato()||digitalRead(BUTTON_PIN) == LOW) { //if the game's over, check for the user to reset
-      t = 0;
-      gameLength = 0;
-      gameOver = false;
-    }
-    
-    lerpColors255(outputColor, endColor, BLACK, 0); //game is over, turn the led red
+    if (checkForEscape()) break;
+
+    if (digitalRead(BUTTON_PIN) == LOW) break;
   }
 }
 
@@ -631,7 +641,8 @@ void hotPotato(byte *outputColor, byte* onColor, byte* endColor) {
 // ===========================================
 // RED TO BLUE FADE FEATURE
 // ===========================================
-// Fades red to blu. 
+//Fades red to blue wit. Might need to change color more often.
+// seems to work, but not tested with avg time function and real free fall
 // note: my led is lit up at 0 and off at 255. If this is also true
 // for led in juggling ball, must switch red and blue variables.
 // Function needs pin number of red, blue, and time (in ms) fall expected to take.
@@ -686,6 +697,22 @@ void timeFade(byte *outputColor, byte* startColor, byte* endColor, int duration)
  * Test feature to delete: displayIfInFreeFall()
  *
  */
+//void displayIfInFreeFall() {
+//  //Serial.println(getLinearAccelerationMagnitude());
+//  if (accelIsPlunging(0.33)){
+//    //Serial.print("\t\t");
+//    draw(255,255,0); 
+//    Serial.println("Plunge!!!!!!!!!!!!!!!!");
+//  }
+//  else if (accelIsSpiking(3.0)){
+//    draw (0,255,255);
+//    Serial.println("Spike!!");
+//  }
+//  else {
+//    draw (255,255,255);
+//  }
+//  //Serial.println(getLinearAccelerationMagnitude());
+//}
 
 /*
  * Times the duration of each throw, and fades from red to blue linearly or parabolically using the duration of the previous throw.
@@ -694,8 +721,9 @@ void timeFade(byte *outputColor, byte* startColor, byte* endColor, int duration)
  * Pros of this approach: No FIFO overflow -> better MPU sensing
  * Cons of this approach: Requires more global variables
  *
+ * TODO: maybe have it accept a light output function as a parameter?
  */
-void airTimeFade(byte *outputColor, byte *startColor, byte *endColor) {
+void lightCycle(byte *outputColor, byte *startColor, byte *endColor) {
 
   // Detecting the start of a throw
   if (accelIsPlunging(0.7) && !freeFalling) { 
@@ -723,6 +751,8 @@ void airTimeFade(byte *outputColor, byte *startColor, byte *endColor) {
 
   // Detecting the end of a throw   
   // If it is no longer in free fall and we haven't set freeFalling back to false yet, set it to false, and set throwEndTime and lastThrowDuration.
+  // Potential issue: is the minimum accel threshold for !isFreeFalling() too low? 
+  // Do we need a isStronglyAccelerating() function with a higher minimum threshold instead of !isFreeFalling()?
   if (freeFalling && accelIsSpiking(1.5)) {
     freeFalling = false;
     throwEndTime = millis() % 100000;
@@ -743,6 +773,7 @@ void airTimeFade(byte *outputColor, byte *startColor, byte *endColor) {
 /*
  * Should show temperature from the sensor, and then map
  * it to an int between 0 and 255 so that it is visible.
+ * Currently buggy. MPU doesn't seem to work properly.
  */
 void sensorTemperatureFade(byte *outputColor, byte *lowColor, byte *highColor, int rangeMin, int rangeHigh) {
   double sensorTemp = ((double)mpu.getTemperature() + 12412.0) / 340.0;
@@ -795,7 +826,6 @@ void webTemperatureFade(byte *outputColor, byte *lowColor, byte *highColor, int 
  */
 void accelerationFlashing() {
   int accel = getLinearAccelerationMagnitude();
-  Serial.println(accel);
   int timeDelay = 160; //change as you like!
   if (accel > 5000)
     rapidFlashing(timeDelay/5);
@@ -949,16 +979,6 @@ boolean checkForEscape() {
 }
 
 /**
- * Checks for an escape key to reset the hotPotato feature
- */
-boolean checkForEscapeHotPotato() {
-  if (computerString.length() == 1 && computerString[0] == 'h') {
-    return true;
-  }
-  return false;
-}
-
-/**
  * Gets RGB values from the user via the Serial and alters
  * the light accordingly.
  */
@@ -1047,12 +1067,10 @@ void lerpColors(byte *outputColor, byte *color1, byte *color2, float amt) {
  * Precondition: 0<=amt<=255
  */
 void lerpColors255(byte *outputColor, byte *color1, byte *color2, byte amt) {
-  byte redByte = (byte)(color1[0] * (255 - amt) + color2[0] * amt)/255;
-  byte greenByte = (byte)(color1[1] * (255 - amt) + color2[1] * amt)/255;
-  byte blueByte = (byte)(color1[2] * (255 - amt) + color2[2] * amt)/255;
+  byte redByte = (color1[0] * (255 - amt) + color2[0] * amt)/255;
+  byte greenByte = (color1[1] * (255 - amt) + color2[1] * amt)/255;
+  byte blueByte = (color1[2] * (255 - amt) + color2[2] * amt)/255;
   outputColor[0] = redByte;
-  Serial.print("/toutputC");
-  Serial.print(redByte);
   outputColor[1] = greenByte;
   outputColor[2] = blueByte;
 }
@@ -1108,6 +1126,15 @@ int color(char color) {
     return ledPins[2];
     break;
   }  
+}
+
+/**
+ * Sets the LED's color using an int array.
+ */
+void setColor(int* led, int* color){
+  for(int i = 0; i < 3; i++){
+    analogWrite(led[i], color[i]); //note: a low output turns the led on
+  }
 }
 
 /**
@@ -1195,9 +1222,9 @@ int getLinearAccelerationMagnitude() {
   mpu.dmpGetGravity(&gravity, &q); // Sets gravity to a unit vector in the direction of gravity (if not in free fall)
   mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity); // Sets aaReal to the linear acceleration with gravity removed.
   //The below are longs instead of ints because we'll need them to be longs when we square them (they go over int's max value)
-  long xAcc = aaReal.x; 
-  long yAcc = aaReal.y;
-  long zAcc = aaReal.z;
+  long xAcc = aa.x; 
+  long yAcc = aa.y;
+  long zAcc = aa.z;
   return sqrt(pow(xAcc, 2) + pow(yAcc, 2) + pow(zAcc, 2));
 }
 

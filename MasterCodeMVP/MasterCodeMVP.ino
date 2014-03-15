@@ -169,7 +169,7 @@ int historyIndex = 0;
 int distFromCOM = 2; // TODO: Allow the user to measure and enter this somehow.
 
 boolean usingWiredSerial = true;
-boolean usingWirelessSerial = true;
+boolean usingWirelessSerial = false;
 
 // ====================================
 // Variables Relating to Changing Modes
@@ -238,7 +238,7 @@ void setup() {
 
   // Useful for debugging. Remove for final product
   if (usingWiredSerial)
-    while(!Serial);
+    //while(!Serial);
 
   // ====================
   // HARDWARE SETUP
