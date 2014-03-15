@@ -617,8 +617,7 @@ void hotPotato(byte *outputColor, byte* onColor, byte* endColor) {
 // ===========================================
 // RED TO BLUE FADE FEATURE
 // ===========================================
-//Fades red to blue wit. Might need to change color more often.
-// seems to work, but not tested with avg time function and real free fall
+// Fades red to blu. 
 // note: my led is lit up at 0 and off at 255. If this is also true
 // for led in juggling ball, must switch red and blue variables.
 // Function needs pin number of red, blue, and time (in ms) fall expected to take.
@@ -673,22 +672,6 @@ void timeFade(byte *outputColor, byte* startColor, byte* endColor, int duration)
  * Test feature to delete: displayIfInFreeFall()
  *
  */
-//void displayIfInFreeFall() {
-//  //Serial.println(getLinearAccelerationMagnitude());
-//  if (accelIsPlunging(0.33)){
-//    //Serial.print("\t\t");
-//    draw(255,255,0); 
-//    Serial.println("Plunge!!!!!!!!!!!!!!!!");
-//  }
-//  else if (accelIsSpiking(3.0)){
-//    draw (0,255,255);
-//    Serial.println("Spike!!");
-//  }
-//  else {
-//    draw (255,255,255);
-//  }
-//  //Serial.println(getLinearAccelerationMagnitude());
-//}
 
 /*
  * Times the duration of each throw, and fades from red to blue linearly or parabolically using the duration of the previous throw.
