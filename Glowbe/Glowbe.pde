@@ -38,7 +38,7 @@ int BALL_IMG_Y = WINDOW_HEIGHT - BALL_IMG_HEIGHT - 14;
 
 int TEXT_X = BALL_IMG_WIDTH + 22;
 
-int SECONDARY_LIST_WIDTH = 150;
+int SECONDARY_LIST_WIDTH = 212;
 
 // Temperature Mode
 char TEMPERATURE_MODE = '5';
@@ -117,13 +117,13 @@ void setup() {
   levelSelect = l.add("Mode Select", -1);
   levelSelect.add("mode0", 0).setLabel("Mode 0: Acceleration Fade").setWidth(SECONDARY_LIST_WIDTH);
   levelSelect.add("mode1", 1).setLabel("Mode 1: Rotation Fade").setWidth(SECONDARY_LIST_WIDTH);
-  levelSelect.add("mode2", 2).setLabel("Mode 2: Hot Potato").setWidth(SECONDARY_LIST_WIDTH);
-  levelSelect.add("mode3", 3).setLabel("Mode 3: Fade Red Blue").setWidth(SECONDARY_LIST_WIDTH);
-  levelSelect.add("mode4", 4).setLabel("Mode 4: Light Cycle").setWidth(SECONDARY_LIST_WIDTH);
-  levelSelect.add("mode5", 5).setLabel("Mode 5: Color Picker").setWidth(SECONDARY_LIST_WIDTH);
-  levelSelect.add("mode6", 6).setLabel("Mode 6: Sensor Temperature").setWidth(SECONDARY_LIST_WIDTH);
-  levelSelect.add("mode7", 7).setLabel("Mode 7: Web Temperature").setWidth(SECONDARY_LIST_WIDTH);
-  levelSelect.add("mode8", 8).setLabel("Mode 8").setWidth(SECONDARY_LIST_WIDTH);
+  levelSelect.add("mode2", 2).setLabel("Mode 2: Acceleration Fade Based On Temperature").setWidth(SECONDARY_LIST_WIDTH);
+  levelSelect.add("mode3", 3).setLabel("Mode 3: Red Blue Fade").setWidth(SECONDARY_LIST_WIDTH);
+  levelSelect.add("mode4", 4).setLabel("Mode 4: Throw Air Time Fade").setWidth(SECONDARY_LIST_WIDTH);
+  levelSelect.add("mode5", 5).setLabel("Mode 5: Acceleration Flashing").setWidth(SECONDARY_LIST_WIDTH);
+  levelSelect.add("mode6", 6).setLabel("Mode 6: Light Show").setWidth(SECONDARY_LIST_WIDTH);
+  levelSelect.add("mode7", 7).setLabel("Mode 7: Web Temperature Fade").setWidth(SECONDARY_LIST_WIDTH);
+  levelSelect.add("mode8", 8).setLabel("Mode 8: Acceleration Light Show").setWidth(SECONDARY_LIST_WIDTH);
 
   // Play animation Button
   pa = cp5.addButton("playAnimation")
@@ -347,7 +347,7 @@ public void controlEvent(ControlEvent c) {
   } 
   // Writes the selected mode to port when the appropriate button is clicked
   else if (c.isFrom(l) && c.value() != -1) {
-    if (int(c.value()) == 5) {
+    if (int(c.value()) == 6 || int(c.value()) == 8) {
       // Color picker
       cp = cp5.addColorPicker("picker").setPosition(60, 100).setColorValue(color(255, 128, 0, 128));
       // Play Animation button
