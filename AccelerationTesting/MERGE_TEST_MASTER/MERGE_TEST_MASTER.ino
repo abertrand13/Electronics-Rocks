@@ -1,7 +1,11 @@
 
 // ===========================
 <<<<<<< HEAD
+<<<<<<< HEAD
 // MASTER CODE - Not Color Ball! (Testing merging)
+=======
+// MASTER CODE - ColorBall 
+>>>>>>> FETCH_HEAD
 =======
 // MASTER CODE - ColorBall 
 >>>>>>> FETCH_HEAD
