@@ -143,7 +143,6 @@ String arduinoString;
 int ledPins[] = {
   9, 10, 11};
 
-//DELETE ONE OF THESE
 int redPin = 11;
 int greenPin = 10;
 int bluePin = 9;
