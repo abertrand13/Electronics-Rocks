@@ -186,7 +186,7 @@ int historyIndex = 0;
 // Initial Config Variables
 // ========================
 // Distance in cm (mm?) from center of mass of the ball. Used for centripetal acceleration offset in detecting freefall.
-int distFromCOM = 2; // TODO: Allow the user to measure and enter this somehow.
+int distFromCOM = 2; 
 
 boolean usingWiredSerial = true;
 boolean usingWirelessSerial = true;
@@ -255,9 +255,7 @@ void setup() {
   if (usingWirelessSerial)
     Serial1.begin(9600);
 
-  // Useful for debugging. Remove for final product
-  //if (usingWiredSerial)
-    //while(!Serial);
+
 
   // ====================
   // HARDWARE SETUP
@@ -276,8 +274,8 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT);
 
   //initializes the random() function with analog noise from an unused pin
-  randomSeed(analogRead(0)); //is this an analog input on the fio?
-
+  randomSeed(analogRead(0)); 
+  
   // join I2C bus (I2Cdev library doesn't do this automatically)
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
   Wire.begin();
@@ -305,13 +303,7 @@ void setup() {
   Serial.println(F("Testing device connections..."));
   Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
 
-  //we didn't want to wait for ready...so we commented this out.  It initializes automatically now.
-  // wait for ready
-  //Serial.println(F("\nSend any character to begin DMP programming and demo: "));
-  //while (Serial.available() && Serial.read()); // empty buffer
-  //while (!Serial.available());                 // wait for data
-  //while (Serial.available() && Serial.read()); // empty buffer again
-
+  
   // load and configure the DMP
   Serial.println(F("Initializing DMP..."));
   devStatus = mpu.dmpInitialize();
