@@ -48,6 +48,11 @@ int redVal = 255;
 int greenVal = 255;
 int blueVal = 255;
 
+// WOEID (Web Temperature Location)
+// 23511612 = the WOEID of Stanford University
+// use this site to find out about your WOEID : http://woeid.rosselliot.co.nz/
+int WOEID = 23511612;
+
 // Current Web Temperature
 int currentTemp = 0;
 
@@ -89,13 +94,13 @@ boolean sketchFullScreen() {
 void setup() { 
   // Set window size
   size(WINDOW_WIDTH, WINDOW_HEIGHT);
-  
+
   // Set text font
   textFont(createFont("Arial", 14));
-  
+
   // Sets up the Serial port. Enter the name of your usb cable here by checking which usb is being used.   
   //myPort = new Serial(this, "/dev/tty.usbserial-A702NXEJ", 9600);   
- myPort = new Serial(this, "/dev/tty.usbserial-A702O078", 9600);    
+  myPort = new Serial(this, "/dev/tty.usbserial-A702O078", 9600);    
   myPort.bufferUntil('\n');      // Buffers until the Serial sends a new line character   
 
   // Main GUI Controller
@@ -106,7 +111,7 @@ void setup() {
 
   // Mode Select Multilist
   l = cp5.addMultiList("myList", 120, 10, 60, 20); 
-    
+
   // Multilist Setup
   MultiListButton levelSelect;
   levelSelect = l.add("Mode Select", -1);
@@ -119,46 +124,46 @@ void setup() {
   levelSelect.add("mode6", 6).setLabel("Mode 6: Sensor Temperature").setWidth(SECONDARY_LIST_WIDTH);
   levelSelect.add("mode7", 7).setLabel("Mode 7: Web Temperature").setWidth(SECONDARY_LIST_WIDTH);
   levelSelect.add("mode8", 8).setLabel("Mode 8").setWidth(SECONDARY_LIST_WIDTH);
-  
-   // Play animation Button
+
+  // Play animation Button
   pa = cp5.addButton("playAnimation")
     .setValue(0)
-    .setCaptionLabel("Play!")
-    .setPosition(firstBoxX, firstBoxY-90)
-    .setSize(boxWidth, 25);
+      .setCaptionLabel("Play!")
+        .setPosition(firstBoxX, firstBoxY-90)
+          .setSize(boxWidth, 25);
+
   // Stop Animation Button
   sa = cp5.addButton("stopAnimation")
     .setValue(0)
-    .setCaptionLabel("Stop")
-    .setPosition(firstBoxX, firstBoxY-60)
-    .setSize(boxWidth, 25);
- // Animation Length Slider
+      .setCaptionLabel("Stop")
+        .setPosition(firstBoxX, firstBoxY-60)
+          .setSize(boxWidth, 25);
+
+  // Animation Length Slider
   cp5.addSlider("lengthSlider")
     .setCaptionLabel("Animation length")
-    .setColorCaptionLabel(0)
-    .setPosition(firstBoxX, firstBoxY-30)
-    .setSize(boxWidth/2, 25)
-    .setValue(200)
-    .setRange(10,1000);
-  
-  // 23511612 = the WOEID of Stanford University
-  // use this site to find out about your WOEID : http://woeid.rosselliot.co.nz/
-  weather = new YahooWeather(this, 23511612, "c", updateIntervallMillis);
-  
+      .setColorCaptionLabel(0)
+        .setPosition(firstBoxX, firstBoxY-30)
+          .setSize(boxWidth/2, 25)
+            .setValue(200)
+              .setRange(10, 1000);
+
+  // Weather
+  weather = new YahooWeather(this, WOEID, "c", updateIntervallMillis);
+
   // Load background image
   bgImg = loadImage("background.jpg");
   bgImg.resize(WINDOW_WIDTH, WINDOW_HEIGHT);
-  
+
   // Load glowbe image
   colorBallImg = loadImage("colorBall.png");
   colorBallImg.resize(BALL_IMG_WIDTH, BALL_IMG_HEIGHT);
-  
+
   // Set up the boxes for color animation by keyframes later
   keyframeBoxes =  new KeyframeBox[3];
   keyframeBoxes[0] = new KeyframeBox(firstBoxX, firstBoxY, boxWidth, boxHeight, showLength, color(255, 0, 0));
   keyframeBoxes[1] = new KeyframeBox(firstBoxX, firstBoxY+boxHeight+10, boxWidth, boxHeight, showLength, color(0, 255, 0));
-  keyframeBoxes[2] = new KeyframeBox(firstBoxX, firstBoxY+2*boxHeight+20, boxWidth, boxHeight, showLength, color(0, 0, 255)); 
-     
+  keyframeBoxes[2] = new KeyframeBox(firstBoxX, firstBoxY+2*boxHeight+20, boxWidth, boxHeight, showLength, color(0, 0, 255));
 }
 
 /*
@@ -167,7 +172,7 @@ void setup() {
 void draw() {
   // Updates weather
   weather.update();
-  
+
   // Sets background.
   if (colorPickerActive) {
     if (colorKeyframesActive && animating) {
@@ -175,14 +180,14 @@ void draw() {
     }
     else
       background(cp.getColorValue());
-    
+
     // Display Keyframe boxes  
     fill(10, 10, 10);
     for (int i=0; i<3; i++) {
       KeyframeBox kfBox = keyframeBoxes[i];
       rect(kfBox.x, kfBox.y, kfBox.boxWidth, kfBox.boxHeight);
     }
-    
+
     // Display animation frame line
     if (animating) {
       stroke(255); 
@@ -204,14 +209,14 @@ void draw() {
     }
     // Displaying and manipulating the keyframes
     for (int b = 0; b < 3; b++) {
-    // Draw leftmost keyframe
-    Keyframe leftKf = keyframeBoxes[b].keyframes.get(0);
-    leftKf.display();
-    
-    // Draw and/or manipulate each successive keyframe
-    for (int i = 1; i < keyframeBoxes[b].keyframes.size(); i++) {
-       Keyframe rightKf = keyframeBoxes[b].keyframes.get(i);
-      // if this keyframe is to the left of previous, swap them in the arraylist!
+      // Draw leftmost keyframe
+      Keyframe leftKf = keyframeBoxes[b].keyframes.get(0);
+      leftKf.display();
+
+      // Draw and/or manipulate each successive keyframe
+      for (int i = 1; i < keyframeBoxes[b].keyframes.size(); i++) {
+        Keyframe rightKf = keyframeBoxes[b].keyframes.get(i);
+        // if this keyframe is to the left of previous, swap them in the arraylist!
         if (rightKf.x < leftKf.x) {
           keyframeBoxes[b].keyframes.remove(i-1);
           keyframeBoxes[b].keyframes.add(i, leftKf);
@@ -220,38 +225,37 @@ void draw() {
           else if (selectedBoxIndex == b && selectedKeyframeIndex == i)
             selectedKeyframeIndex--;
         }
-        
+
         // Clicked on an existing keyframe in the middle -> select it
         // The !draggingKeyframe part is to prevent selecting many at once as you drag the cursor around
         if (mousePressed && dist(mouseX, mouseY, rightKf.x, rightKf.y) < rightKf.w && i < keyframeBoxes[b].keyframes.size() - 1 && !draggingKeyframe) {
-            rightKf.select();
-            draggingKeyframe = true;
-            if (selectedKeyframe != null)
-              selectedKeyframe.deselect();
-            selectedKeyframe = rightKf;
-            selectedKeyframeIndex = i;
-            selectedBoxIndex = b;
+          rightKf.select();
+          draggingKeyframe = true;
+          if (selectedKeyframe != null)
+            selectedKeyframe.deselect();
+          selectedKeyframe = rightKf;
+          selectedKeyframeIndex = i;
+          selectedBoxIndex = b;
         }
-        
+
         if (rightKf.beingDragged) {
           // Check if the mouse is in the box for keyframes 
           if (mouseInBox(keyframeBoxes[b])) {
-                rightKf.x = mouseX;
-                rightKf.y = mouseY;
-                rightKf.time = xToTime(mouseX, keyframeBoxes[b]);
-                rightKf.value = yToValue(mouseY, keyframeBoxes[b]);
-            }
-            else { // Stop dragging it!
-              rightKf.stopDragging();
-              draggingKeyframe = false;
-            }
+            rightKf.x = mouseX;
+            rightKf.y = mouseY;
+            rightKf.time = xToTime(mouseX, keyframeBoxes[b]);
+            rightKf.value = yToValue(mouseY, keyframeBoxes[b]);
+          }
+          else { // Stop dragging it!
+            rightKf.stopDragging();
+            draggingKeyframe = false;
+          }
         }
-       
+
         stroke(keyframeBoxes[b].keyframeColor);
         line(leftKf.x, leftKf.y, rightKf.x, rightKf.y); // Draw line between this keyframe and the previous
         rightKf.display();
         leftKf = rightKf; // So drawing the lines works right
-        
       }
       // Clicked in the box but not on a keyframe -> create and select a new keyframe
       if (mousePressed && !draggingKeyframe && mouseInBox(keyframeBoxes[b])) {
@@ -262,16 +266,16 @@ void draw() {
           selectedKeyframe.deselect();
         selectedKeyframe = newKeyframe;
         //animating = false; to prevent outOfBoundsExceptions, for now
-     
+
         // Find its proper index according to its x position
         for (int i = 1; i < keyframeBoxes[b].keyframes.size(); i++) {
-           Keyframe kf = keyframeBoxes[b].keyframes.get(i);
-           if (kf.x > newKeyframe.x) {
-              keyframeBoxes[b].keyframes.add(i, newKeyframe);
-              selectedKeyframeIndex = i;
-              selectedBoxIndex = b;
-              break; 
-           }
+          Keyframe kf = keyframeBoxes[b].keyframes.get(i);
+          if (kf.x > newKeyframe.x) {
+            keyframeBoxes[b].keyframes.add(i, newKeyframe);
+            selectedKeyframeIndex = i;
+            selectedBoxIndex = b;
+            break;
+          }
         }
       }
     }
@@ -280,14 +284,15 @@ void draw() {
       draggingKeyframe = false;
       selectedKeyframe.stopDragging();
       // need to set selectedKeyframe to null?
-    }  
-  } else {
+    }
+  } 
+  else {
     background(bgImg);
   }
-  
+
   image(colorBallImg, BALL_IMG_X, BALL_IMG_Y);
-    
-  
+
+
   // Textual weather information
   fill(0);
   textSize(9);
@@ -338,7 +343,7 @@ public void controlEvent(ControlEvent c) {
       kfBox.keyframes.get(0).y = valueToY(colorComponent, kfBox);
       kfBox.keyframes.get(lastIndex).value = colorComponent;
       kfBox.keyframes.get(lastIndex).y = valueToY(colorComponent, kfBox);
-    }  
+    }
   } 
   // Writes the selected mode to port when the appropriate button is clicked
   else if (c.isFrom(l) && c.value() != -1) {
@@ -348,23 +353,23 @@ public void controlEvent(ControlEvent c) {
       // Play Animation button
       pa = cp5.addButton("playAnimation")
         .setValue(0)
-        .setCaptionLabel("Play!")
-        .setPosition(firstBoxX, firstBoxY-90)
-        .setSize(boxWidth, 25);
+          .setCaptionLabel("Play!")
+            .setPosition(firstBoxX, firstBoxY-90)
+              .setSize(boxWidth, 25);
       // Stop Animation button
       sa = cp5.addButton("stopAnimation")
         .setValue(0)
-        .setCaptionLabel("Stop")
-        .setPosition(firstBoxX, firstBoxY-60)
-        .setSize(boxWidth, 25);
-     // Animation length slider
+          .setCaptionLabel("Stop")
+            .setPosition(firstBoxX, firstBoxY-60)
+              .setSize(boxWidth, 25);
+      // Animation length slider
       al = cp5.addSlider("lengthSlider")
         .setCaptionLabel("Animation length")
-        .setColorCaptionLabel(0)
-        .setPosition(firstBoxX, firstBoxY-30)
-        .setSize(boxWidth/2, 25)
-        .setValue(200)
-        .setRange(10,1000);
+          .setColorCaptionLabel(0)
+            .setPosition(firstBoxX, firstBoxY-30)
+              .setSize(boxWidth/2, 25)
+                .setValue(200)
+                  .setRange(10, 1000);
       colorPickerActive = true;
       colorKeyframesActive = true;
     }
@@ -386,7 +391,7 @@ public void controlEvent(ControlEvent c) {
     frame = 0;
     lastKeyframeIndices[0] = 0;
     lastKeyframeIndices[1] = 0;
-    lastKeyframeIndices[2] = 0; 
+    lastKeyframeIndices[2] = 0;
   }
   // Button pressed -> stop color animation
   else if (c.isFrom(sa)) {
@@ -398,8 +403,8 @@ public void controlEvent(ControlEvent c) {
     animating = false; // to prevent outOfBoundsExceptions, for now
     for (int b=0; b < 3; b++) {
       for (int i=0; i < keyframeBoxes[b].keyframes.size(); i++) {
-         Keyframe kf = keyframeBoxes[b].keyframes.get(i);
-         kf.time = xToTime(kf.x, keyframeBoxes[b]);
+        Keyframe kf = keyframeBoxes[b].keyframes.get(i);
+        kf.time = xToTime(kf.x, keyframeBoxes[b]);
       }
     }
   }
@@ -415,8 +420,8 @@ void animate() {
     int timeSinceLast = frame - lastKeyframe.time;
     float progress = ((float)timeSinceLast)/duration;
     rgb[b] = (int) lerp(lastKeyframe.value, nextKeyframe.value, progress); 
-    
-    while (lastKeyframeIndices[b] < keyframeBoxes[b].keyframes.size() - 1  && frame > keyframeBoxes[b].keyframes.get(lastKeyframeIndices[b]+1).time) {
+
+    while (lastKeyframeIndices[b] < keyframeBoxes[b].keyframes.size () - 1  && frame > keyframeBoxes[b].keyframes.get(lastKeyframeIndices[b]+1).time) {
       lastKeyframeIndices[b]++;
     }
     myPort.write(String.valueOf(rgb[b]));
@@ -436,21 +441,22 @@ void animate() {
 // Keyframe manipulation helper methods
 
 int xToTime(float x, KeyframeBox kfBox) {
-   return (int) ((x - kfBox.x) /  kfBox.boxWidth * showLength);
+  return (int) ((x - kfBox.x) /  kfBox.boxWidth * showLength);
 }
 
 int yToValue(float y, KeyframeBox kfBox) {
-   return (int) ((kfBox.y + kfBox.boxHeight - y) / kfBox.boxHeight * 255);
+  return (int) ((kfBox.y + kfBox.boxHeight - y) / kfBox.boxHeight * 255);
 }
 
 float timeToX(int time, KeyframeBox kfBox) {
-   return kfBox.x + kfBox.boxWidth * ((float) time)/showLength;
+  return kfBox.x + kfBox.boxWidth * ((float) time)/showLength;
 }
 
 float valueToY(int value, KeyframeBox kfBox) {
-   return kfBox.y + kfBox.boxHeight * (1- ((float) value)/255);
+  return kfBox.y + kfBox.boxHeight * (1- ((float) value)/255);
 }
 
 boolean mouseInBox(KeyframeBox kfBox) {
   return mouseX > kfBox.x && mouseX < kfBox.x + kfBox.boxWidth && mouseY > kfBox.y && mouseY < kfBox.y + kfBox.boxHeight;
 }
+
