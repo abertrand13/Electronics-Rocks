@@ -204,7 +204,7 @@ int BUTTON_PIN = 15;
 int mode = 0;
 
 // Number of modes in mode selection
-int NUMBER_OF_MODES = 10;
+int NUMBER_OF_MODES = 8;
 
 // Amount of time to wait to advance from mode selection
 int MODE_SELECTION_WAIT = 7000;
@@ -422,6 +422,8 @@ void loop() {
     // ============================
     
     switch(mode) {
+      
+    // Modes that do not require wireless connection to the Processing app:
     case 0:
       {
         accelerationFade(nextColor, RED, BLUE);
@@ -434,7 +436,9 @@ void loop() {
       break;
     case 2:
       {
-        hotPotato(nextColor, BLUE, RED);
+        byte baseColor[3];
+        sensorTemperatureFade(baseColor, BLUE, RED, 0, 50);
+        accelerationFade(nextColor, baseColor, GREEN);
       }
       break;
     case 3:
@@ -451,14 +455,13 @@ void loop() {
       break;
     case 5:
       {
-        userLightInput(nextColor);
+        accelerationFlashing();
       }
       break;
+    // Modes that require connection to the Processing app:  
     case 6:
       {
-        byte baseColor[3];
-        sensorTemperatureFade(baseColor, BLUE, RED, 0, 50);
-        accelerationFade(nextColor, baseColor, GREEN);
+        userLightInput(nextColor);
       }
       break; 
     case 7:
@@ -466,16 +469,16 @@ void loop() {
         webTemperatureFade(nextColor, BLUE, RED, 32, 100);
       }
       break;
-    case 8: 
-      {
-        accelerationFlashing();
-      }
-      break;
-    case 9: 
-      {
-        gravityGlow(nextColor);
-      }
-      break;
+//    case 8: 
+//      {
+//        hotPotato(nextColor, BLUE, RED);
+//      }
+//      break;
+//    case 9: 
+//      {
+//        gravityGlow(nextColor);
+//      }
+//      break;
     }
     if (nextColor[0] != currentColor[0] || nextColor[1] != currentColor[1] || nextColor[2] != currentColor[2]) {
       currentColor[0] = nextColor[0];
@@ -511,25 +514,27 @@ void accelerationFade(byte *outputColor, byte *lowColor, byte *highColor){
 
 
 
-  Serial.print("\t");
-  Serial.print(xAccel); 
-  Serial.print("\t");
-  Serial.print(yAccel); 
-  Serial.print("\t");
-  Serial.print(zAccel); 
-  Serial.print("\t");
+//  Serial.print("\t");
+//  Serial.print(xAccel); 
+//  Serial.print("\t");
+//  Serial.print(yAccel); 
+//  Serial.print("\t");
+//  Serial.print(zAccel); 
+//  Serial.print("\t");
   Serial.print(maxAccel);
 
 
   // color1 to color2 based on acceleration
-  int accelVal = (maxAccel-3500) * 255 / 4000.0;
+  int accelVal = (int)(maxAccel-3500)/1000.0 * 255;
   if (accelVal < 0){
     accelVal = 0;
   }
   Serial.print("\t");
-  Serial.println(accelVal);
+  Serial.print(accelVal);
   accelVal = (accelVal > 255) ? 255 : accelVal;
   lerpColors255(outputColor, lowColor, highColor, accelVal);
+  Serial.print("\t");
+  Serial.println(outputColor[0]);
 } 
 
 // ==============================================
