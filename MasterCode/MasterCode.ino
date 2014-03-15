@@ -144,11 +144,25 @@ String arduinoString;
 int ledPins[] = {
   9, 10, 11};
 
-
 //DELETE ONE OF THESE
 int redPin = 11;
 int greenPin = 10;
 int bluePin = 9;
+
+// ==========================
+// Hot Potato Variables
+// ==========================
+
+  int t_on = 100; //time (in ms) that the led should be on (per blink)
+  int t_off0 = 1000; //time (in ms) that the led should be off at the loop's start
+  int t_off; //time that the led should be off (per blink). this will change over the course of the loop  
+
+  int gameLength= 0; //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
+  int t_lastSwitch = 0;
+  int t = 0;
+  
+  boolean isOn = true;
+  boolean gameOver = false;
 
 // ==========================
 // Fade Over Time Mode Variables
@@ -431,7 +445,7 @@ void loop() {
       break;
     case 2:
       {
-        hotPotato();
+        hotPotato(nextColor, BLUE, RED);
       }
       break;
     case 3:
@@ -564,76 +578,58 @@ byte* fadeRBGRotation(){
 // ==============================================
 // HOT POTATO FEATURE
 // ==============================================
-void hotPotato() {
+void hotPotato(byte *outputColor, byte* onColor, byte* endColor) {
 
-  int t_on = 100; //time (in ms) that the led should be on (per blink)
-  int t_off0 = 1000; //time (in ms) that the led should be off at the loop's start
-  int t_off; //time that the led should be off (per blink). this will change over the course of the loop
-
-  int rON[] = {
-    255,0,0                                        }; //lights red LED
-  int bON[] = {
-    0,0,255                                        }; //lights blue LED
-  int OFF[] = {
-    0,0,0                                        };   
-
-  int duration = random(10000,30000); //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
-  int t_lastSwitch = 0;
-  int t = 0;
-
-  Serial.println(duration);
-
-  boolean isOn = true;
-  setColor(ledPins, bON);
-
-  while (t < duration) {
-
-    // Receives information from computer
-    receiveStringFromComputer();
-
-    // Receives information from arduino
-    receiveCharFromArduino();
-
-    if (checkForEscape()) break;
-
-    //these if statements blink the blue led
-    if (isOn){
-      if (t - t_lastSwitch > t_on) { //if the led's on, check if it's time to turn it off
-        isOn = false;
-        t_lastSwitch = t;
+  if (!gameLength) {
+    gameLength = random(10000,30000); //length of one hot-potato game in ms. chosen randomly to be between 10 and 30 seconds
+    Serial.println(gameLength);
+  }
+  
+  if (!gameOver) {
+    if (t < gameLength) {
+  
+      //these if statements blink the blue led
+      if (isOn){
+        if (t - t_lastSwitch > t_on) { //if the led's on, check if it's time to turn it off
+          isOn = false;
+          t_lastSwitch = t;
+        }
+      } 
+      else {//if the led's off, check if it's time to turn it on
+        t_off = map(t, 0, gameLength, t_off0, 0); //scales the off time down linearly according to how close the game is to ending 
+        //(i.e. according to how t compares with gameLength)
+        if (t - t_lastSwitch > t_off) {  
+          isOn = true;
+          t_lastSwitch = t;
+        }
       }
-    } 
-    else {//if the led's off, check if it's time to turn it on
-      t_off = map(t, 0, duration, t_off0, 0); //scales the off time down linearly according to how close the game is to ending 
-      //(i.e. according to how t compares with duration)
-      if (t - t_lastSwitch > t_off) {  
-        isOn = true;
-        t_lastSwitch = t;
+  
+      t += 10;
+      delay(10);
+  
+      if (isOn) {
+        lerpColors255(outputColor, onColor, BLACK, 0);
+      } else {
+        lerpColors255(outputColor, BLACK, BLACK, 0);
       }
+      
+    } else {
+       if (!isFreeFalling()){ //don't end the game if the ball's in midair
+       gameOver = true;
+        }
     }
-
-    if (isOn) setColor(ledPins, bON); 
-    else setColor(ledPins, OFF);
-
-    t += 10;
-    delay(10);
-  }
-
-  while (isFreeFalling()){
-    delay(500); //don't end the game while the ball is in mid-throw
-    Serial.println("Free Fall!");
-  }
-
-  setColor(ledPins, rON); //game is over, turn the led red
-
-  while (true) {//wait for the user to reset the game
+  } else {
     // Receives information from computer
     receiveStringFromComputer();
     // Receives information from arduino
     receiveCharFromArduino();
-    if (checkForEscape()) break;
-
-    if (digitalRead(BUTTON_PIN) == LOW) break;
+    if (checkForEscapeHotPotato()||digitalRead(BUTTON_PIN) == LOW) { //if the game's over, check for the user to reset
+      t = 0;
+      gameLength = 0;
+      gameOver = false;
+    }
+    
+    lerpColors255(outputColor, endColor, BLACK, 0) //game is over, turn the led red
   }
 }
 
@@ -979,6 +975,16 @@ boolean checkForEscape() {
 }
 
 /**
+ * Checks for an escape key to reset the hotPotato feature
+ */
+boolean checkForEscapeHotPotato() {
+  if (computerString.length() == 1 && computerString[0] == 'h') {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Gets RGB values from the user via the Serial and alters
  * the light accordingly.
  */
@@ -1126,15 +1132,6 @@ int color(char color) {
     return ledPins[2];
     break;
   }  
-}
-
-/**
- * Sets the LED's color using an int array.
- */
-void setColor(int* led, int* color){
-  for(int i = 0; i < 3; i++){
-    analogWrite(led[i], color[i]); //note: a low output turns the led on
-  }
 }
 
 /**
