@@ -31,6 +31,13 @@ Serial myPort;        // The serial port
 int WINDOW_WIDTH = 400;
 int WINDOW_HEIGHT = 700;
 
+int BALL_IMG_WIDTH = 55;
+int BALL_IMG_HEIGHT = 55;
+int BALL_IMG_X = 12;
+int BALL_IMG_Y = WINDOW_HEIGHT - BALL_IMG_HEIGHT - 14;
+
+int TEXT_X = BALL_IMG_WIDTH + 22;
+
 int SECONDARY_LIST_WIDTH = 150;
 
 // Temperature Mode
@@ -46,6 +53,7 @@ int currentTemp = 0;
 
 // Background image
 PImage bgImg;
+PImage colorBallImg;
 
 // Boolean value that says whether the color picker is active
 boolean colorPickerActive = false;
@@ -65,6 +73,7 @@ Keyframe selectedKeyframe;
 int selectedKeyframeIndex;
 int selectedBoxIndex;
 KeyframeBox[] keyframeBoxes;
+
 /*
 Sets the window to be full screen. Called automatically when the program begins.
  */
@@ -75,7 +84,7 @@ boolean sketchFullScreen() {
  */
 
 /*
- * Sets up the game. Called automatically when the program begins.
+ * Sets up the program. Called automatically when the program begins.
  */
 void setup() { 
   // Set window size
@@ -139,6 +148,10 @@ void setup() {
   // Load background image
   bgImg = loadImage("background.jpg");
   bgImg.resize(WINDOW_WIDTH, WINDOW_HEIGHT);
+  
+  // Load glowbe image
+  colorBallImg = loadImage("colorBall.png");
+  colorBallImg.resize(BALL_IMG_WIDTH, BALL_IMG_HEIGHT);
   
   // Set up the boxes for color animation by keyframes later
   keyframeBoxes =  new KeyframeBox[3];
@@ -271,15 +284,17 @@ void draw() {
   } else {
     background(bgImg);
   }
+  
+  image(colorBallImg, BALL_IMG_X, BALL_IMG_Y);
     
   
   // Textual weather information
   fill(0);
   textSize(9);
   currentTemp = int(weather.getTemperature() * 1.8) + 32;
-  text("Current Temperature: "+currentTemp, 20, WINDOW_HEIGHT - 60);
-  text("City: "+weather.getCityName()+"; Region: "+weather.getRegionName()+"; Country: "+weather.getCountryName(), 20, WINDOW_HEIGHT - 40);
-  text("Last updated: "+weather.getLastUpdated(), 20, WINDOW_HEIGHT - 20);
+  text("Current Temperature: "+currentTemp, TEXT_X, WINDOW_HEIGHT - 60);
+  text("City: "+weather.getCityName()+"; Region: "+weather.getRegionName()+"; Country: "+weather.getCountryName(), TEXT_X, WINDOW_HEIGHT - 40);
+  text("Last updated: "+weather.getLastUpdated(), TEXT_X, WINDOW_HEIGHT - 20);
 }
 
 /*
