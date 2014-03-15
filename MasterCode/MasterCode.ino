@@ -169,14 +169,14 @@ boolean fadeIsInProgress; // set to true if accelerometer is experiencing freefa
 unsigned long fadeStartTime; // time in milliseconds between the program start and the last time the accelerometer entered freefall
 
 // ==========================
-// LightCycle Mode Variables
+// airTimeFade Mode Variables
 // ==========================
 boolean freeFalling; // set to true if accelerometer is experiencing freefall; false if not
 unsigned long throwStartTime; // time in milliseconds between the program start and the last time the accelerometer entered freefall
 unsigned long throwEndTime; // time in milliseconds between the program start and the last time the accelerometer exited freefall
 int lastThrowDuration = 100; // the duration in milliseconds that it was last in freefall (throwEndTime - throwStartTime). First throw 100 default arbitrary - fix?
 
-const int historyLength = 10; // Keep it even, to be safe. The greater this is, the less sensitive LightCycle is to spiking acceleration (which helps muffle noise)
+const int historyLength = 10; // Keep it even, to be safe. The greater this is, the less sensitive airTimeFade is to spiking acceleration (which helps muffle noise)
 int accelHistory[historyLength];
 int recentAvgAccel = 0;
 int olderAvgAccel = 0;
@@ -436,9 +436,10 @@ void loop() {
       break;
     case 2:
       {
+        // Fades between the color represented by the sensor temperature and GREEN based on the rotation speed
         byte baseColor[3];
         sensorTemperatureFade(baseColor, BLUE, RED, 0, 50);
-        accelerationFade(nextColor, baseColor, GREEN);
+        rotationFade(nextColor, baseColor, GREEN);
       }
       break;
     case 3:
@@ -448,7 +449,7 @@ void loop() {
       break;
     case 4:
       {
-        lightCycle(nextColor, RED, BLUE);
+        airTimeFade(nextColor, RED, BLUE);
         updateAccelHistory();
         //displayIfInFreeFall();
       }
@@ -469,12 +470,20 @@ void loop() {
         webTemperatureFade(nextColor, BLUE, RED, 32, 100);
       }
       break;
-//    case 8: 
+    case 8: 
+      {
+          //TODO: Acceleration Light Show
+           byte baseColor[3];
+           userLightInput(baseColor);
+           accelerationFade(nextColor, baseColor, GREEN);
+      }
+      break;
+//    case 9: 
 //      {
 //        hotPotato(nextColor, BLUE, RED);
 //      }
 //      break;
-//    case 9: 
+//    case 10: 
 //      {
 //        gravityGlow(nextColor);
 //      }
@@ -529,9 +538,9 @@ void accelerationFade(byte *outputColor, byte *lowColor, byte *highColor){
   if (accelVal < 0){
     accelVal = 0;
   }
+  accelVal = (accelVal > 255) ? 255 : accelVal;
   Serial.print("\t");
   Serial.print(accelVal);
-  accelVal = (accelVal > 255) ? 255 : accelVal;
   lerpColors255(outputColor, lowColor, highColor, accelVal);
   Serial.print("\t");
   Serial.println(outputColor[0]);
@@ -686,7 +695,7 @@ void timeFade(byte *outputColor, byte* startColor, byte* endColor, int duration)
  * Cons of this approach: Requires more global variables
  *
  */
-void lightCycle(byte *outputColor, byte *startColor, byte *endColor) {
+void airTimeFade(byte *outputColor, byte *startColor, byte *endColor) {
 
   // Detecting the start of a throw
   if (accelIsPlunging(0.7) && !freeFalling) { 
@@ -786,6 +795,7 @@ void webTemperatureFade(byte *outputColor, byte *lowColor, byte *highColor, int 
  */
 void accelerationFlashing() {
   int accel = getLinearAccelerationMagnitude();
+  Serial.println(accel);
   int timeDelay = 160; //change as you like!
   if (accel > 5000)
     rapidFlashing(timeDelay/5);
@@ -1037,10 +1047,12 @@ void lerpColors(byte *outputColor, byte *color1, byte *color2, float amt) {
  * Precondition: 0<=amt<=255
  */
 void lerpColors255(byte *outputColor, byte *color1, byte *color2, byte amt) {
-  byte redByte = (color1[0] * (255 - amt) + color2[0] * amt)/255;
-  byte greenByte = (color1[1] * (255 - amt) + color2[1] * amt)/255;
-  byte blueByte = (color1[2] * (255 - amt) + color2[2] * amt)/255;
+  byte redByte = (byte)(color1[0] * (255 - amt) + color2[0] * amt)/255;
+  byte greenByte = (byte)(color1[1] * (255 - amt) + color2[1] * amt)/255;
+  byte blueByte = (byte)(color1[2] * (255 - amt) + color2[2] * amt)/255;
   outputColor[0] = redByte;
+  Serial.print("/toutputC");
+  Serial.print(redByte);
   outputColor[1] = greenByte;
   outputColor[2] = blueByte;
 }
@@ -1183,9 +1195,9 @@ int getLinearAccelerationMagnitude() {
   mpu.dmpGetGravity(&gravity, &q); // Sets gravity to a unit vector in the direction of gravity (if not in free fall)
   mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity); // Sets aaReal to the linear acceleration with gravity removed.
   //The below are longs instead of ints because we'll need them to be longs when we square them (they go over int's max value)
-  long xAcc = aa.x; 
-  long yAcc = aa.y;
-  long zAcc = aa.z;
+  long xAcc = aaReal.x; 
+  long yAcc = aaReal.y;
+  long zAcc = aaReal.z;
   return sqrt(pow(xAcc, 2) + pow(yAcc, 2) + pow(zAcc, 2));
 }
 
