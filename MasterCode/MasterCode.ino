@@ -1,4 +1,3 @@
-
 // ===========================
 // MASTER CODE - Creative Name for our Product
 // Authors: EE 27N (names in alphabetical order eventually)
@@ -629,7 +628,7 @@ void hotPotato(byte *outputColor, byte* onColor, byte* endColor) {
       gameOver = false;
     }
     
-    lerpColors255(outputColor, endColor, BLACK, 0) //game is over, turn the led red
+    lerpColors255(outputColor, endColor, BLACK, 0); //game is over, turn the led red
   }
 }
 
